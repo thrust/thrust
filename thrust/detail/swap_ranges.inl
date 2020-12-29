@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file swap_ranges.inl
- *  \brief Inline file for swap_ranges.h.
- */
+#pragma once
 
 #include <thrust/swap.h>
 #include <thrust/iterator/iterator_traits.h>

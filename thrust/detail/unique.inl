@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file unique.inl
- *  \brief Inline file for unique.h.
- */
+#pragma once
 
 #include <thrust/detail/config.h>
 #include <thrust/unique.h>
@@ -99,7 +96,7 @@ template<typename DerivedPolicy,
 __host__ __device__
   thrust::pair<ForwardIterator1,ForwardIterator2>
   unique_by_key(const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
-                ForwardIterator1 keys_first, 
+                ForwardIterator1 keys_first,
                 ForwardIterator1 keys_last,
                 ForwardIterator2 values_first)
 {
@@ -116,7 +113,7 @@ template<typename DerivedPolicy,
 __host__ __device__
   thrust::pair<ForwardIterator1,ForwardIterator2>
   unique_by_key(const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
-                ForwardIterator1 keys_first, 
+                ForwardIterator1 keys_first,
                 ForwardIterator1 keys_last,
                 ForwardIterator2 values_first,
                 BinaryPredicate binary_pred)
@@ -135,7 +132,7 @@ template<typename DerivedPolicy,
 __host__ __device__
   thrust::pair<OutputIterator1,OutputIterator2>
   unique_by_key_copy(const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
-                     InputIterator1 keys_first, 
+                     InputIterator1 keys_first,
                      InputIterator1 keys_last,
                      InputIterator2 values_first,
                      OutputIterator1 keys_output,
@@ -156,7 +153,7 @@ template<typename DerivedPolicy,
 __host__ __device__
   thrust::pair<OutputIterator1,OutputIterator2>
   unique_by_key_copy(const thrust::detail::execution_policy_base<DerivedPolicy> &exec,
-                     InputIterator1 keys_first, 
+                     InputIterator1 keys_first,
                      InputIterator1 keys_last,
                      InputIterator2 values_first,
                      OutputIterator1 keys_output,
@@ -239,7 +236,7 @@ template<typename InputIterator,
 template<typename ForwardIterator1,
          typename ForwardIterator2>
   thrust::pair<ForwardIterator1,ForwardIterator2>
-    unique_by_key(ForwardIterator1 keys_first, 
+    unique_by_key(ForwardIterator1 keys_first,
                   ForwardIterator1 keys_last,
                   ForwardIterator2 values_first)
 {
@@ -259,7 +256,7 @@ template<typename ForwardIterator1,
          typename ForwardIterator2,
          typename BinaryPredicate>
   thrust::pair<ForwardIterator1,ForwardIterator2>
-    unique_by_key(ForwardIterator1 keys_first, 
+    unique_by_key(ForwardIterator1 keys_first,
                   ForwardIterator1 keys_last,
                   ForwardIterator2 values_first,
                   BinaryPredicate binary_pred)
@@ -281,7 +278,7 @@ template<typename InputIterator1,
          typename OutputIterator1,
          typename OutputIterator2>
   thrust::pair<OutputIterator1,OutputIterator2>
-    unique_by_key_copy(InputIterator1 keys_first, 
+    unique_by_key_copy(InputIterator1 keys_first,
                        InputIterator1 keys_last,
                        InputIterator2 values_first,
                        OutputIterator1 keys_output,
@@ -309,7 +306,7 @@ template<typename InputIterator1,
          typename OutputIterator2,
          typename BinaryPredicate>
   thrust::pair<OutputIterator1,OutputIterator2>
-    unique_by_key_copy(InputIterator1 keys_first, 
+    unique_by_key_copy(InputIterator1 keys_first,
                        InputIterator1 keys_last,
                        InputIterator2 values_first,
                        OutputIterator1 keys_output,

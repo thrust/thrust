@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file for_each.inl
- *  \brief Inline file for for_each.h.
- */
+#pragma once
 
 #include <thrust/detail/config.h>
 #include <thrust/detail/static_assert.h>
@@ -80,7 +77,7 @@ RandomAccessIterator for_each_n(execution_policy<DerivedPolicy> &,
 #endif // THRUST_DEVICE_COMPILER_IS_OMP_CAPABLE
 
   return first + n;
-} // end for_each_n() 
+} // end for_each_n()
 
 template<typename DerivedPolicy,
          typename RandomAccessIterator,

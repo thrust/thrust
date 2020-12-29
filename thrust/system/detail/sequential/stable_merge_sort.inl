@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#pragma once
 
 #include <thrust/iterator/iterator_traits.h>
 #include <thrust/detail/temporary_array.h>

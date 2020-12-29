@@ -15,8 +15,9 @@
  *  limitations under the License.
  */
 
-#include <thrust/complex.h>
+#pragma once
 
+#include <thrust/complex.h>
 #include <thrust/type_traits/is_trivially_relocatable.h>
 
 namespace thrust

@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/detail/config.h>
 #include <thrust/detail/temporary_array.h>
 #include <thrust/iterator/discard_iterator.h>
@@ -96,7 +98,7 @@ class feistel_bijection {
 
   // Round function, a 'pseudorandom function' who's output is indistinguishable
   // from random for each key value input. This is not cryptographically secure
-  // but sufficient for generating permutations. 
+  // but sufficient for generating permutations.
   __host__ __device__ std::uint32_t round_function(std::uint64_t value,
                                               const std::uint64_t key_) const {
     std::uint64_t hash0 = thrust::random::taus88(static_cast<std::uint32_t>(value))();

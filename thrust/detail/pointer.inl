@@ -14,10 +14,11 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/detail/config.h>
 #include <thrust/detail/pointer.h>
 #include <thrust/detail/type_traits.h>
-
 
 namespace thrust
 {

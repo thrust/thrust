@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file iterator_traits.inl
- *  \brief Inline file for iterator_traits.h.
- */
+#pragma once
 
 #include <thrust/iterator/iterator_categories.h>
 #include <thrust/iterator/detail/iterator_category_to_traversal.h>
@@ -79,7 +76,7 @@ struct iterator_system_impl<
   : detail::iterator_category_to_system<
       typename iterator_traits<Iterator>::iterator_category
     >
-{}; 
+{};
 
 } // namespace detail
 

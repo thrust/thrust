@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file remove.inl
- *  \brief Inline file for remove.h
- */
+#pragma once
 
 #include <thrust/detail/config.h>
 #include <thrust/system/detail/generic/remove.h>
@@ -108,7 +105,7 @@ __host__ __device__
 
   // remove into temp
   return thrust::remove_copy_if(exec, temp.begin(), temp.end(), stencil, first, pred);
-} // end remove_if() 
+} // end remove_if()
 
 
 template<typename DerivedPolicy,

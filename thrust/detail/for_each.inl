@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file for_each.inl
- *  \brief Inline file for for_each.h.
- */
+#pragma once
 
 #include <thrust/detail/config.h>
 #include <thrust/for_each.h>
@@ -29,7 +26,7 @@
 namespace thrust
 {
 
-__thrust_exec_check_disable__ 
+__thrust_exec_check_disable__
 template<typename DerivedPolicy,
          typename InputIterator,
          typename UnaryFunction>
@@ -58,7 +55,7 @@ InputIterator for_each(InputIterator first,
   return thrust::for_each(select_system(system), first, last, f);
 } // end for_each()
 
-__thrust_exec_check_disable__ 
+__thrust_exec_check_disable__
 template<typename DerivedPolicy, typename InputIterator, typename Size, typename UnaryFunction>
 __host__ __device__
   InputIterator for_each_n(const thrust::detail::execution_policy_base<DerivedPolicy> &exec,

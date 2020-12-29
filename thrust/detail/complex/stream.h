@@ -15,6 +15,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/complex.h>
 
 namespace thrust
@@ -25,16 +27,16 @@ std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>&
   os << '(' << z.real() << ',' << z.imag() << ')';
   return os;
 }
-  
+
 template<typename ValueType, typename charT, class traits>
 std::basic_istream<charT, traits>&
 operator>>(std::basic_istream<charT, traits>& is, complex<ValueType>& z)
 {
   ValueType re, im;
-    
+
   charT ch;
   is >> ch;
-    
+
   if(ch == '(')
     {
       is >> re >> ch;

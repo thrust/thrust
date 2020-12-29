@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file uninitialized_fill.inl
- *  \brief Inline file for uninitialized_fill.h.
- */
+#pragma once
 
 #include <thrust/uninitialized_fill.h>
 #include <thrust/iterator/iterator_traits.h>

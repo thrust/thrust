@@ -14,11 +14,6 @@
  *  limitations under the License.
  */
 
-
-/*! \file unique.inl
- *  \brief Inline file for unique.h.
- */
-
 #pragma once
 
 #include <thrust/detail/config.h>
@@ -66,9 +61,9 @@ __host__ __device__
                          BinaryPredicate binary_pred)
 {
   typedef typename thrust::iterator_traits<ForwardIterator>::value_type InputType;
-  
+
   thrust::detail::temporary_array<InputType,DerivedPolicy> input(exec, first, last);
-  
+
   return thrust::unique_copy(exec, input.begin(), input.end(), first, binary_pred);
 } // end unique()
 
@@ -99,9 +94,9 @@ __host__ __device__
                              BinaryPredicate binary_pred)
 {
   thrust::detail::head_flags<InputIterator, BinaryPredicate> stencil(first, last, binary_pred);
-  
+
   using namespace thrust::placeholders;
-  
+
   return thrust::copy_if(exec, first, last, stencil.begin(), output, _1);
 } // end unique_copy()
 

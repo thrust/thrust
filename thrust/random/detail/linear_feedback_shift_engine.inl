@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/random/linear_feedback_shift_engine.h>
 
 namespace thrust

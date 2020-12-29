@@ -14,11 +14,12 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/detail/temporary_array.h>
 #include <thrust/distance.h>
 #include <thrust/system/detail/generic/select_system.h>
 #include <thrust/detail/type_traits.h>
-
 
 namespace thrust
 {

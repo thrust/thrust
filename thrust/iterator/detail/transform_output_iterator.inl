@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/iterator/transform_output_iterator.h>
 #include <thrust/iterator/iterator_adaptor.h>
 
@@ -23,7 +25,7 @@ namespace thrust
 template <typename UnaryFunction, typename OutputIterator>
   class transform_output_iterator;
 
-namespace detail 
+namespace detail
 {
 
 // Proxy reference that uses Unary Function to transform the rhs of assigment

@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/iterator/iterator_adaptor.h>
 #include <thrust/iterator/iterator_traits.h>
@@ -25,8 +27,8 @@ namespace thrust
 
 template <class UnaryFunction, class Iterator, class Reference, class Value>
   class transform_iterator;
-  
-namespace detail 
+
+namespace detail
 {
 
 // Compute the iterator_adaptor instantiation to be used for transform_iterator

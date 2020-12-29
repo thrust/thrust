@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/pair.h>
 #include <thrust/detail/swap.h>
 
