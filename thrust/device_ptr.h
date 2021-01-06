@@ -15,7 +15,7 @@
  */
 
 
-/*! \file device_ptr.h
+/*! \file 
  *  \brief A pointer to a variable which resides memory accessible to devices.
  */
 
@@ -23,6 +23,7 @@
 
 #include <thrust/detail/config.h>
 #include <thrust/memory.h>
+#include <cstddef>
 
 namespace thrust
 {
@@ -75,17 +76,15 @@ template<typename T>
     > super_t;
 
   public:
-    /*! \p device_ptr's null constructor initializes its raw pointer to \c 0.
+    /*! \brief \p device_ptr's null constructor initializes its raw pointer to \c 0.
      */
     __host__ __device__
     device_ptr() : super_t() {}
 
-    #if THRUST_CPP_DIALECT >= 2011
     // NOTE: This is needed so that Thrust smart pointers can be used in
     // `std::unique_ptr`.
     __host__ __device__
-    device_ptr(decltype(nullptr)) : super_t(nullptr) {}
-    #endif
+    device_ptr(std::nullptr_t ptr) : super_t(ptr) {}
 
     /*! \p device_ptr's copy constructor is templated to allow copying to a
      *  <tt>device_ptr<const T></tt> from a <tt>T *</tt>.
@@ -116,16 +115,14 @@ template<typename T>
       return *this;
     }
 
-    #if THRUST_CPP_DIALECT >= 2011
     // NOTE: This is needed so that Thrust smart pointers can be used in
     // `std::unique_ptr`.
     __host__ __device__
-    device_ptr& operator=(decltype(nullptr))
+    device_ptr& operator=(std::nullptr_t ptr)
     {
-      super_t::operator=(nullptr);
+      super_t::operator=(ptr);
       return *this;
     }
-    #endif
 
 // declare these members for the purpose of Doxygenating them
 // they actually exist in a derived-from class

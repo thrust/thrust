@@ -1,0 +1,17 @@
+---
+{% if exists("title") -%}
+title: {{title}}
+{% else if exists("name") -%}
+title: {{name}}
+{% endif -%}
+{% if exists("summary") -%}
+summary: {{summary}}
+{% endif -%}
+{% include "meta" -%}
+---
+
+{% if exists("title") -%}
+# {{title}}
+{% else if exists("kind") and kind != "page" -%}
+# {{name}} {{title(kind)}} Reference
+{% endif -%}

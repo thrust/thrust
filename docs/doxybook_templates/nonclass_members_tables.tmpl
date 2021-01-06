@@ -1,0 +1,57 @@
+{% if exists("groups") %}## Groups
+
+| Name           |
+| -------------- |
+{% for child in sort(groups) %}| **[{{child.title}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if exists("dirs") %}## Directories
+
+| Name           |
+| -------------- |
+{% for child in dirs %}| **[{{child.title}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if exists("files") %}## Files
+
+| Name           |
+| -------------- |
+{% for child in files %}| **[{{child.title}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if exists("namespaces") %}## Namespaces
+
+| Name           |
+| -------------- |
+{% for child in namespaces %}| **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if exists("publicClasses") %}## Classes
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in publicClasses %}| {{child.kind}} | **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if exists("publicTypes") %}## Types
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in publicTypes %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{{child.kind}}{% if existsIn(child, "type") %} {{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if child.kind == "enum" %}{ {% for enumvalue in child.enumvalues %}{{enumvalue.name}}{% if existsIn(enumvalue, "initializer") %} {{enumvalue.initializer}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %} }{% endif %}{% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{%- if exists("publicFunctions") -%}## Functions
+
+<code class="doxybook">
+{%- for child in publicFunctions -%}
+{% if existsIn(child, "brief") %}<span>/* {{child.brief}} */</span>{% endif %}
+<span>{%- if existsIn(child, "templateParams") -%}template &lt;{% for param in child.templateParams %}
+{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}{% endfor %}&gt;</span><span>
+{%- endif -%}
+{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %}</span><span>
+<b><a href="{{child.url}}">{{child.name}}</a></b>({%- for param in child.params -%}
+{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}
+{%- endfor -%}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} = default{% endif %}{% if child.deleted %} = deleted{% endif %}{% if child.pureVirtual %} = 0{% endif %};</span>
+{%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}</code>
+{%- endif -%}
+{% if exists("defines") %}## Defines
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in defines %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**{% if existsIn(child, "params") %}({% for param in child.params %}{{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}

@@ -282,7 +282,7 @@ template<typename Element, typename Pointer, typename Derived = thrust::use_defa
  *
  *  \tparam DerivedPolicy The name of the derived execution policy.
  *
- *  \pre \p DerivedPolicy must be publically derived from <code>thrust::execution_policy<DerivedPolicy></code>.
+ *  \pre \p DerivedPolicy must be publically derived from <tt>thrust::execution_policy<DerivedPolicy></tt>.
  *
  *  The following code snippet demonstrates how to use \p malloc to allocate a range of memory
  *  associated with Thrust's device system.
@@ -320,7 +320,7 @@ pointer<void,DerivedPolicy> malloc(const thrust::detail::execution_policy_base<D
  *
  *  \tparam DerivedPolicy The name of the derived execution policy.
  *
- *  \pre \p DerivedPolicy must be publically derived from <code>thrust::execution_policy<DerivedPolicy></code>.
+ *  \pre \p DerivedPolicy must be publically derived from <tt>thrust::execution_policy<DerivedPolicy></tt>.
  *
  *  The following code snippet demonstrates how to use \p malloc to allocate a range of memory
  *  to accomodate integers associated with Thrust's device system.
@@ -364,7 +364,7 @@ pointer<T,DerivedPolicy> malloc(const thrust::detail::execution_policy_base<Deri
  *
  *  \tparam DerivedPolicy The name of the derived execution policy.
  *
- *  \pre \p DerivedPolicy must be publically derived from <code>thrust::execution_policy<DerivedPolicy></code>.
+ *  \pre \p DerivedPolicy must be publically derived from <tt>thrust::execution_policy<DerivedPolicy></tt>.
  *
  *  The following code snippet demonstrates how to use \p get_temporary_buffer to allocate a range of memory
  *  to accomodate integers associated with Thrust's device system.

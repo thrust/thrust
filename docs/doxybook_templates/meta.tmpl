@@ -1,0 +1,31 @@
+{% if exists("moduleBreadcrumbs") -%}
+{% if length(moduleBreadcrumbs) > 0 -%}
+parent: {{ get(last(moduleBreadcrumbs), "title") }}
+{% endif -%}
+{% else -%}
+{% if exists("kind") -%}{% if kind == "group" -%}
+parent: API
+{% endif -%}{% endif -%}
+{% endif -%}
+{% if exists("moduleBreadcrumbs") -%}
+{% if length(moduleBreadcrumbs) > 1 -%}
+grand_parent: {{ get(index(moduleBreadcrumbs, -2), "title") }}
+{% else if length(moduleBreadcrumbs == 1) -%}
+{% if exists("kind") -%}
+{% if kind == "group" -%}
+grand_parent: API
+{% endif -%}
+{% endif -%}
+{% endif -%}
+{% endif -%}
+has_children: true
+has_toc: false
+{% if exists("kind") -%}
+{% if kind == "group" -%}
+nav_exclude: false
+{% else -%}
+nav_exclude: true
+{% endif -%}
+{% else %}
+nav_exclude: true
+{% endif -%}

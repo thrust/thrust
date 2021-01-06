@@ -1,0 +1,104 @@
+{% for base in baseClasses %}
+{% if existsIn(base, "publicClasses") %}**Public Classes inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicClasses %}| {{child.kind}} | **[{{last(stripNamespace(child.name))}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedClasses") %}**Protected Classes inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedClasses %}| {{child.kind}} | **[{{last(stripNamespace(child.name))}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicTypes") %}**Public Types inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicTypes %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{{child.kind}}{% if existsIn(child, "type") %} {{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if child.kind == "enum" %}{ {% for enumvalue in child.enumvalues %}{{enumvalue.name}}{% if existsIn(enumvalue, "initializer") %} {{enumvalue.initializer}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %} }{% endif %}{% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedTypes") %}**Protected Types inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedTypes %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{{child.kind}}{% if existsIn(child, "type") %} {{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if child.kind == "enum" %}{ {% for enumvalue in child.enumvalues %}{{enumvalue.name}}{% if existsIn(enumvalue, "initializer") %} {{enumvalue.initializer}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %} }{% endif %}{% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicSlots") %}**Public Slots inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicSlots %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedSlots") %}**Protected Slots inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedSlots %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicSignals") %}**Public Signals inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicSignals %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedSignals") %}**Protected Signals inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedSignals %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicEvents") %}**Public Events inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicEvents %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedEvents") %}**Protected Events inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedEvents %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicFunctions") %}**Public Functions inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicFunctions %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedFunctions") %}**Protected Functions inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedFunctions %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{% if child.virtual %}virtual {% endif %}{% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% if child.override %} override{% endif %}{% if child.default %} =default{% endif %}{% if child.deleted %} =deleted{% endif %}{% if child.pureVirtual %} =0{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicProperties") %}**Public Properties inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicProperties %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedProperties") %}**Protected Properties inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedProperties %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "publicAttributes") %}**Public Attributes inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.publicAttributes %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "protectedAttributes") %}**Protected Attributes inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.protectedAttributes %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% if existsIn(base, "friends") %}**Friends inherited from [{{base.name}}]({{base.url}})**
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in base.friends %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**{% if child.type != "class" %}({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}
+{% endfor %}

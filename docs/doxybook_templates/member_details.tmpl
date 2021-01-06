@@ -1,0 +1,34 @@
+{%- if kind in ["function", "slot", "signal", "event"] -%}
+<code class="doxybook">
+<span>{%- if exists("templateParams") -%}template &lt;{%- for param in templateParams -%}
+{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}{% endfor %}&gt;</span><span>
+{%- endif -%}
+{% if virtual %}virtual {% endif %}{% if exists("type") %}{{type}}{% endif %}</span><span>
+<b>{{name}}</b>({%- for param in params -%}
+{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}
+{%- endfor -%}){% if const %} const{% endif %}{% if override %} override{% endif %}{% if default %} = default{% endif %}{% if deleted %} = deleted{% endif %}{% if pureVirtual %} = 0{% endif %};</span></code>
+{%- endif -%}
+{% if kind == "enum" -%}
+| Enumerator | Value | Description |
+| ---------- | ----- | ----------- |
+{% for enumvalue in enumvalues %}| {{enumvalue.name}} | {% if existsIn(enumvalue, "initializer") %}{{replace(enumvalue.initializer, "= ", "")}}{% endif %} | {% if existsIn(enumvalue, "brief") %}{{enumvalue.brief}}{% endif %} {% if existsIn(enumvalue, "details") %}{{enumvalue.details}}{% endif %} |
+{% endfor %}
+{% endif %}{% if kind in ["variable", "property"] %}```cpp
+{% if static %}static {% endif %}{% if exists("typePlain") %}{{typePlain}} {% endif %}{{name}}{% if exists("initializer") %} {{initializer}}{% endif %};
+```{% endif %}{% if kind == "typedef" %}```cpp
+{{definition}};
+```{% endif %}{% if kind == "using" %}```cpp
+{% if exists("templateParams") %}template <{% for param in templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},
+{% endif %}{% endfor %}>
+{% endif %}{{definition}};
+```{% endif %}{% if kind == "friend" %}```cpp
+friend {% if exists("typePlain") %}{{typePlain}} {% endif %}{{name}}{% if exists("params") %}{% endif %}{% if length(params) > 0 %}(
+{% for param in params %}    {{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}
+{% endfor %}){% else if typePlain != "class" %}(){% endif %};
+```{% endif %}{% if kind == "define" %}```cpp
+#define {{name}}{% if exists("params") %}(
+{% for param in params %}    {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}
+{% endfor %}){% endif %}{% if exists("initializer") %} {{initializer}}{% endif %}
+```{% endif %}
+
+{% include "details" %}

@@ -60,7 +60,7 @@ public:
     typedef T value_type;
     /*! The pointer type allocated by this allocator. Equivaled to the pointer type of \p MR rebound to \p T. */
     typedef typename thrust::detail::pointer_traits<void_pointer>::template rebind<T>::other pointer;
-    /*! The pointer to const type. Equivalent to a pointer type of \p MR reboud to <tt>const T</tt>. */
+    /*! The pointer to const type. Equivalent to a pointer type of \p MR rebound to <tt>const T</tt>. */
     typedef typename thrust::detail::pointer_traits<void_pointer>::template rebind<const T>::other const_pointer;
     /*! The reference to the type allocated by this allocator. Supports smart references. */
     typedef typename thrust::detail::pointer_traits<pointer>::reference reference;
