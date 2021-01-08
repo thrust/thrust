@@ -1,13 +1,8 @@
 {%- if kind in ["function", "slot", "signal", "event"] -%}
 <code class="doxybook">
-<span>{%- if exists("templateParams") -%}
-template &lt;{%- for param in templateParams -%}
-{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}{%- endfor -%}&gt;</span><span>
-{%- endif -%}
-{% if virtual %}virtual {% endif %}{% if exists("type") %}{{type}}{% endif %}</span><span>
-<b>{{name}}</b>({%- for param in params -%}
-{%- if not loop.is_first -%}&nbsp;&nbsp;{%- endif -%}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{%- if not loop.is_last -%},</span><span>{%- endif -%}
-{%- endfor -%}){% if const %} const{% endif %}{% if override %} override{% endif %}{% if default %} = default{% endif %}{% if deleted %} = deleted{% endif %}{% if pureVirtual %} = 0{% endif %};</span>
+{% include "synopsis_template_parameters.tmpl" -%}
+{% include "synopsis_function_return_type_and_leading_specifiers.tmpl" -%}
+<span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>
 </code>
 {%- endif -%}
 {% if kind == "enum" -%}

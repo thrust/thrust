@@ -1,0 +1,4 @@
+{%- if exists("templateParams") -%}<span>template &lt;{%- for param in templateParams -%}
+{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif -%}
+{%- endfor -%}&gt;</span>
+{%- endif -%}
