@@ -86,24 +86,28 @@ template<typename T>
     __host__ __device__
     device_ptr(std::nullptr_t ptr) : super_t(ptr) {}
 
-    /*! \p device_ptr's copy constructor is templated to allow copying to a
-     *  <tt>device_ptr<const T></tt> from a <tt>T *</tt>.
+    /*! \brief \p device_ptr's copy constructor is templated to allow copying
+     *  to a <tt>device_ptr<const T></tt> from a <tt>T *</tt>.
      *
      *  \param ptr A raw pointer to copy from, presumed to point to a location in
-     *         device memory.
+     *             device memory.
      */
     template<typename OtherT>
     __host__ __device__
     explicit device_ptr(OtherT *ptr) : super_t(ptr) {}
 
-    /*! \p device_ptr's copy constructor allows copying from another device_ptr with related type.
+    /*! \brief \p device_ptr's copy constructor allows copying from another
+     *  device_ptr with related type.
+     *
      *  \param other The \p device_ptr to copy from.
      */
     template<typename OtherT>
     __host__ __device__
     device_ptr(const device_ptr<OtherT> &other) : super_t(other) {}
 
-    /*! \p device_ptr's assignment operator allows assigning from another \p device_ptr with related type.
+    /*! \brief \p device_ptr's assignment operator allows assigning from
+     *  another \p device_ptr with related type.
+     *
      *  \param other The other \p device_ptr to copy from.
      *  \return <tt>*this</tt>
      */
@@ -124,9 +128,7 @@ template<typename T>
       return *this;
     }
 
-// declare these members for the purpose of Doxygenating them
-// they actually exist in a derived-from class
-#if 0
+#if THRUST_DOXYGEN
     /*! This method returns this \p device_ptr's raw pointer.
      *  \return This \p device_ptr's raw pointer.
      */
@@ -135,9 +137,7 @@ template<typename T>
 #endif // end doxygen-only members
 }; // end device_ptr
 
-// declare these methods for the purpose of Doxygenating them
-// they actually are defined for a derived-from class
-#if 0
+#if THRUST_DOXYGEN
 /*! Writes to an output stream the value of a \p device_ptr's raw pointer.
  *
  *  \param os The output stream.
@@ -159,10 +159,11 @@ operator<<(std::basic_ostream<charT, traits> &os, const device_ptr<T> &p);
  *  \{
  */
 
-/*! \p device_pointer_cast creates a device_ptr from a raw pointer which is presumed to point
- *  to a location in device memory.
+/*! \brief \p device_pointer_cast creates a device_ptr from a raw pointer which
+ *  is presumed to point to a location in device memory.
  *
  *  \param ptr A raw pointer, presumed to point to a location in device memory.
+ *
  *  \return A device_ptr wrapping ptr.
  */
 template<typename T>

@@ -8,6 +8,7 @@ color_scheme: nvidia
 logo: /assets/images/nvidia_logo.png
 
 search_enabled: true
+search.heading_level: 4
 
 incremental: true
 

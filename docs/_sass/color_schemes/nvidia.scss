@@ -49,7 +49,7 @@ $feedback-color: darken($sidebar-color, 3%);
 
 div.highlighter-rouge,
 pre.highlight code,
-code.synopsis
+code.doxybook
 { background-color: #111 !important; }
 
 .highlight span.err { color: #ff0000; font-weight: bold; } /* Error */
@@ -88,7 +88,8 @@ code.synopsis
 .highlight span.c,  /* Comment */
 .highlight span.cm, /* Comment.Multiline */
 .highlight span.c1, /* Comment.Single */
-.highlight span.cs  /* Comment.Special */
+.highlight span.cs, /* Comment.Special */
+span.doxybook-comment
 { color: #009966; font-style: italic }
 
 .highlight span.cp  /* Preprocessor */

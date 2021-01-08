@@ -6,7 +6,7 @@
 {% endfor %}{% endif %}
 {% if exists("publicFunctions") %}## Functions Documentation
 
-{% for child in publicFunctions %}<h3 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(child.name) }}</code></h3>
+{% for child in publicFunctions %}<h2 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(child.name) }}</code></h2>
 
 {{ render("member_details", child) }}
 {% endfor %}{% endif %}
