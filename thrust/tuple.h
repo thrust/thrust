@@ -200,7 +200,11 @@ template <class T0, class T1, class T2, class T3, class T4,
   /*! \cond
    */
     : public detail::map_tuple_to_cons<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type
+  /*! \endcond
+   */
 {
+  /*! \cond
+   */
 
   private:
   typedef typename detail::map_tuple_to_cons<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type inherited;
@@ -209,6 +213,7 @@ template <class T0, class T1, class T2, class T3, class T4,
    */
 
   public:
+
   /*! \p tuple's no-argument constructor initializes each element.
    */
   inline __host__ __device__
