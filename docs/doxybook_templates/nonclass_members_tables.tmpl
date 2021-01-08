@@ -1,27 +1,19 @@
-{% if exists("groups") %}## Groups
+{%- if exists("groups") -%}## Groups
 
-| Name           |
-| -------------- |
-{% for child in sort(groups) %}| **[{{child.title}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
-{% endfor %}{% endif %}
-{% if exists("dirs") %}## Directories
+{% for child in sort(groups) %}* **[{{child.title}}]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %} |
+{% endfor %}{%- endif -%}
+{%- if exists("dirs") -%}## Directories
 
-| Name           |
-| -------------- |
-{% for child in dirs %}| **[{{child.title}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
-{% endfor %}{% endif %}
-{% if exists("files") %}## Files
+{% for child in dirs %}| **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %} |
+{% endfor %}{%- endif -%}
+{%- if exists("files") -%}## Files
 
-| Name           |
-| -------------- |
-{% for child in files %}| **[{{child.title}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
-{% endfor %}{% endif %}
-{% if exists("namespaces") %}## Namespaces
+{% for child in files %}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+{% endfor %}{%- endif -%}
+{%- if exists("namespaces") -%}## Namespaces
 
-| Name           |
-| -------------- |
-{% for child in namespaces %}| **[{{child.name}}]({{child.url}})** {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
-{% endfor %}{% endif %}
+{% for child in namespaces %}| **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %} |
+{% endfor %}{%- endif -%}
 {% if exists("publicClasses") %}## Classes
 
 |                | Name           |

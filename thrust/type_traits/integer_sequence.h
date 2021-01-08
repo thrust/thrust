@@ -45,7 +45,7 @@ namespace thrust
 
 /*! \brief A compile-time sequence of
  *  <a href="https://en.cppreference.com/w/cpp/language/constant_expression#Integral_constant_expression"><i>integral constants</i></a>
- *  of type \c T with values \c Is... .
+ *  of type \c T with values <tt>Is...</tt>.
  *
  *  \see <a href="https://en.cppreference.com/w/cpp/language/constant_expression#Integral_constant_expression"><i>integral constants</i></a>
  *  \see index_sequence
@@ -80,7 +80,7 @@ struct integer_sequence
 
 /*! \brief A compile-time sequence of type 
  *  <a href="https://en.cppreference.com/w/cpp/types/size_t">std::size_t</a>
- *  with values \c Is... .
+ *  with values <tt>Is...</tt>.
  *
  *  \see integer_sequence
  *  \see make_integer_sequence

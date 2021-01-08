@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-
-/*! \file device_reference.h
- *  \brief A reference to a variable which resides in the "device" system's memory space
+/*! \file 
+ *  \brief A reference to an object which resides in memory associated with the
+ *  device system.
  */
 
 #pragma once
@@ -29,8 +29,7 @@
 namespace thrust
 {
 
-/*! \addtogroup memory_management_classes Memory Management Classes
- *  \ingroup memory_management
+/*! \addtogroup memory_management Memory Management
  *  \{
  */
 
@@ -971,7 +970,7 @@ void swap(device_reference<T>& x, device_reference<T>& y)
 
 // declare these methods for the purpose of Doxygenating them
 // they actually are defined for a derived-from class
-#if 0
+#if THRUST_DOXYGEN
 /*! Writes to an output stream the value of a \p device_reference.
  *
  *  \param os The output stream.
@@ -983,7 +982,7 @@ std::basic_ostream<charT, traits> &
 operator<<(std::basic_ostream<charT, traits> &os, const device_reference<T> &y);
 #endif
 
-/*! \}
+/*! \} // memory_management
  */
 
 } // end thrust

@@ -15,9 +15,9 @@
  */
 
 
-/*! \file device_allocator.h
+/*! \file
  *  \brief An allocator which creates new elements in memory accessible by
- *         devices.
+ *  devices.
  */
 
 #pragma once
@@ -33,8 +33,8 @@
 namespace thrust
 {
 
-/** \addtogroup memory_resources Memory Resources
- *  \ingroup memory_management_classes
+/** \addtogroup allocators Allocators
+ *  \ingroup memory_management
  *  \{
  */
 
@@ -137,7 +137,7 @@ public:
     ~device_allocator() {}
 };
 
-/*! \}
+/*! \} // allocators
  */
 
 } // end thrust

@@ -1,6 +1,16 @@
 {% include "header" %}
 
-{%- if exists("includes") -%}`#include {{includes}}`{%- endif -%}
+{%- if hasDetails -%}<code class="doxybook">
+{%- if exists("includes") -%}<span>#include {{includes}}</span>{%- endif -%}
+<br>
+<span>{%- if exists("templateParams") -%}
+template &lt;{%- for param in templateParams -%}
+{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}{%- endfor -%}&gt;</span><span>
+{%- endif -%}
+{% if kind == "interface" %}class{% else %}{{kind}}{% endif %} {{name}};</span>
+</code>
+
+{%- include "details" -%}{%- endif -%}
 
 {%- if exists("baseClasses") -%}Inherits from {% for child in baseClasses %}{% if existsIn(child, "url") %}[`{{child.name}}`]({{child.url}}){% else %}`{{child.name}}`{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}
 {%- endif -%}
@@ -13,18 +23,6 @@
 
 {%- include "class_members_inherited_tables" -%}
 {%- endif -%}
-
-{%- if hasDetails -%}## Detailed Description
-
-<code class="doxybook">
-<span>{%- if exists("templateParams") -%}
-template &lt;{%- for param in templateParams -%}
-{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{% endif %}{%- endfor -%}&gt;</span><span>
-{%- endif -%}
-{% if kind == "interface" %}class{% else %}{{kind}}{% endif %} {{name}};</span>
-</code>
-
-{%- include "details" -%}{%- endif -%}
 
 {%- include "class_members_details" -%}
 

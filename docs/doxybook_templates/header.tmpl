@@ -1,17 +1,21 @@
 ---
-{% if exists("title") -%}
-title: {{title}}
-{% else if exists("name") -%}
-title: {{name}}
-{% endif -%}
-{% if exists("summary") -%}
-summary: {{summary}}
-{% endif -%}
+{%- if exists("title") -%}title: {{title}}
+{%- else if exists("name") -%}title: {{name}}
+{%- endif -%}
+{%- if exists("summary") -%}summary: {{summary}}
+{%- endif -%}
 {% include "meta" -%}
 ---
 
-{% if exists("title") -%}
-# {{title}}
-{% else if exists("kind") and kind != "page" -%}
-# {{name}} {{title(kind)}} Reference
-{% endif -%}
+{%- if exists("title") -%}
+  {%- if exists("kind") -%}
+    {%- if kind == "class" or kind == "struct"-%}# `{{title}}`
+    {%- else -%}# {{title}}
+    {%- endif -%}
+  {%- else -%}# {{title}}
+  {%- endif -%}
+{%- else if exists("kind") -%}
+  {%- if kind != "page" -%}# {{name}} {{title(kind)}} Reference
+  {%- else -%}# {{name}}
+  {%- endif -%}
+{%- endif -%}

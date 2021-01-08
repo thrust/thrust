@@ -14,6 +14,11 @@
  *  limitations under the License.
  */
 
+/*! \file 
+ *  \brief A pointer to a variable which resides in memory associated with a
+ *  system.
+ */
+
 #pragma once
 
 #include <thrust/detail/config.h>

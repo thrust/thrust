@@ -14,8 +14,8 @@
  *  limitations under the License.
  */
 
-/*! \file allocator.h
- *  \brief Allocator types usable with NPA-based memory resources.
+/*! \file 
+ *  \brief Allocator types usable with \ref Memory Resources.
  */
 
 #pragma once
@@ -34,8 +34,7 @@ namespace thrust
 namespace mr
 {
 
-/*! \addtogroup memory_management Memory Management
- *  \addtogroup memory_management_classes Memory Management Classes
+/*! \addtogroup allocators Allocators
  *  \ingroup memory_management
  *  \{
  */
@@ -92,7 +91,7 @@ public:
 
     /*! Calculates the maximum number of elements allocated by this allocator.
      *
-     *  \returns the maximum value of \p std::size_t, divided by the size of \p T.
+     *  \return the maximum value of \p std::size_t, divided by the size of \p T.
      */
     __thrust_exec_check_disable__
     __host__ __device__
@@ -120,7 +119,7 @@ public:
     /*! Allocates objects of type \p T.
      *
      *  \param n number of elements to allocate
-     *  \returns a pointer to the newly allocated storage.
+     *  \return a pointer to the newly allocated storage.
      */
     THRUST_NODISCARD
     __host__
@@ -142,7 +141,7 @@ public:
 
     /*! Extracts the memory resource used by this allocator.
      *
-     *  \returns the memory resource used by this allocator.
+     *  \return the memory resource used by this allocator.
      */
     __host__ __device__
     MR * resource() const
@@ -244,6 +243,9 @@ public:
     __host__ __device__
     ~stateless_resource_allocator() {}
 };
+
+/*! \} // allocators
+ */
 
 } // end mr
 } // end thrust

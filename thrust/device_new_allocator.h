@@ -14,9 +14,8 @@
  *  limitations under the License.
  */
 
-
-/*! \file device_new_allocator.h
- *  \brief An allocator which allocates storage with \p device_new
+/*! \file 
+ *  \brief An allocator which allocates storage with \p device_new.
  */
 
 #pragma once
@@ -32,7 +31,7 @@
 namespace thrust
 {
 
-/*! \addtogroup memory_management_classes Memory Management Classes
+/*! \addtogroup allocators Allocators
  *  \ingroup memory_management
  *  \{
  */
@@ -165,7 +164,7 @@ template<typename T>
     inline bool operator!=(device_new_allocator const &a) {return !operator==(a); }
 }; // end device_new_allocator
 
-/*! \}
+/*! \} // allocators
  */
 
 } // end thrust
