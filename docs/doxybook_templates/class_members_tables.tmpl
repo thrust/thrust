@@ -1,25 +1,13 @@
-{% if exists("publicClasses") %}## Public Classes
+{%- if exists("publicClasses") %}## Public Classes
 
-<code class="doxybook">
-{%- for child in publicClasses -%}
-{{- render("synopsis_brief.tmpl", child) -}}
-{{- render("synopsis_template_parameters.tmpl", child) -}}
-<span>{{- render("synopsis_kind.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>;</span>
-{%- if not loop.is_last -%}<br>{%- endif -%}
-{%- endfor -%}
-</code>
-{%- endif -%}
-{% if exists("protectedClasses") %}## Protected Classes
+  {%- for child in publicClasses -%}* **[`{{child.name}}`]({{child.url}})**{% if exists("brief") %}: {{brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("protectedClasses") %}## Protected Classes
 
-<code class="doxybook">
-{%- for child in protectedClasses -%}
-{{- render("synopsis_brief.tmpl", child) -}}
-{{- render("synopsis_template_parameters.tmpl", child) -}}
-<span>{{- render("synopsis_kind.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>;</span>
-{%- if not loop.is_last -%}<br>{%- endif -%}
-{%- endfor -%}
-</code>
-{%- endif -%}
+  {%- for child in publicClasses -%}* **[`{{child.name}}`]({{child.url}})**{% if exists("brief") %}: {{brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
 {% if exists("publicTypes") %}## Public Types
 
 |                | Name           |
@@ -32,7 +20,7 @@
 | -------------- | -------------- |
 {% for child in protectedTypes %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{{child.kind}}{% if existsIn(child, "type") %} {{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if child.kind == "enum" %}{ {% for enumvalue in child.enumvalues %}{{enumvalue.name}}{% if existsIn(enumvalue, "initializer") %} {{enumvalue.initializer}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %} }{% endif %}{% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
 {% endfor %}{% endif %}
-{%- if exists("publicFunctions") -%}## Public Member Functions
+{%- if exists("publicFunctions") %}## Public Member Functions
 
 <code class="doxybook">
 {%- for child in publicFunctions -%}
@@ -43,8 +31,8 @@
 {%- if not loop.is_last -%}<br>{%- endif -%}
 {%- endfor -%}
 </code>
-{%- endif -%}
-{% if exists("protectedFunctions") %}## Protected Member Functions
+{% endif -%}
+{%- if exists("protectedFunctions") %}## Protected Member Functions
 
 <code class="doxybook">
 {%- for child in protectedFunctions -%}
@@ -55,7 +43,7 @@
 {%- if not loop.is_last -%}<br>{%- endif -%}
 {%- endfor -%}
 </code>
-{%- endif -%}
+{% endif -%}
 {% if exists("friends") %}## Friends
 
 |                | Name           |

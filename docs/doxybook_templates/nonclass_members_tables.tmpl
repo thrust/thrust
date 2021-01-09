@@ -1,38 +1,35 @@
-{%- if exists("groups") -%}## Groups
+{%- if exists("groups") %}## Groups
 
-{% for child in sort(groups) %}* **[{{child.title}}]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
-{% endfor %}{%- endif -%}
-{%- if exists("dirs") -%}## Directories
-
-{% for child in dirs %}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
-{% endfor %}{%- endif -%}
-{%- if exists("files") -%}## Files
-
-{% for child in files %}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
-{% endfor %}{%- endif -%}
-{%- if exists("namespaces") -%}## Namespaces
-
-{% for child in namespaces %}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
-{% endfor %}{%- endif -%}
-{%- if exists("publicClasses") -%}## Classes
-
-<code class="doxybook">
-{%- for child in publicClasses -%}
-{{- render("synopsis_brief.tmpl", child) -}}
-{{- render("synopsis_template_parameters.tmpl", child) -}}
-<span>{{- render("synopsis_kind.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>;</span>
-{%- if not loop.is_last %}<br>
+  {%- for child in sort(groups) -%}* **[{{child.title}}]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
 {% endif -%}
-{%- endfor -%}
-</code>
-{%- endif -%}
+{%- if exists("dirs") %}## Directories
+
+  {%- for child in dirs -%}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("files") %}## Files
+
+  {%- for child in files -%}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("namespaces") %}## Namespaces
+
+  {%- for child in namespaces -%}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("publicClasses") %}## Classes
+
+  {%- for child in publicClasses -%}* **[`{{child.name}}`]({{child.url}})**{% if exists("brief") %}: {{brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
 {% if exists("publicTypes") %}## Types
 
 |                | Name           |
 | -------------- | -------------- |
 {% for child in publicTypes %}| {% if existsIn(child, "templateParams") %}template \<{% for param in child.templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}{% endfor %}\><br>{% endif %}{{child.kind}}{% if existsIn(child, "type") %} {{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})** {% if child.kind == "enum" %}{ {% for enumvalue in child.enumvalues %}{{enumvalue.name}}{% if existsIn(enumvalue, "initializer") %} {{enumvalue.initializer}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %} }{% endif %}{% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
 {% endfor %}{% endif %}
-{%- if exists("publicFunctions") -%}## Functions
+{%- if exists("publicFunctions") %}## Functions
 
 <code class="doxybook">
 {%- for child in publicFunctions -%}
@@ -43,7 +40,7 @@
 {%- if not loop.is_last -%}<br>{%- endif -%}
 {%- endfor -%}
 </code>
-{%- endif -%}
+{% endif -%}
 {% if exists("defines") %}## Defines
 
 |                | Name           |
