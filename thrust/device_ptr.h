@@ -167,8 +167,8 @@ class device_ptr
      */
     __host__ __device__
     T* get() const;
-#endif // end doxygen-only members
-}; // end device_ptr
+#endif
+}; 
 
 #if THRUST_DOXYGEN
 /*! Write the address that a \c device_ptr points to to an output stream.
@@ -208,7 +208,7 @@ device_ptr<T> device_pointer_cast(device_ptr<T> const& dptr);
 /*! \} // memory_management 
  */
 
-} // end thrust
+} // namespace thrust
 
 #include <thrust/detail/device_ptr.inl>
 #include <thrust/detail/raw_pointer_cast.h>

@@ -1,11 +1,8 @@
 {
-  "outputDir": "docs/api",
   "baseUrl": "/api/",
-  "debugTemplateJson": true,
   "copyImages": true,
   "fileExt": "md",
   "filesFilter": [],
-  "useFolders": true,
   "folderClassesName": "classes",
   "folderExamplesName": "examples",
   "folderFilesName": "files",
