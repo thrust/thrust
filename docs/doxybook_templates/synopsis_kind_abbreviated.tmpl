@@ -1,0 +1,1 @@
+{% if kind == "interface" %}class {% else if kind == "typedef" %}typedef /* ... */ {% else if kind == "enum" %}enum {% if strong %}class {% endif %}{% else %}{{kind}} {% endif -%} 

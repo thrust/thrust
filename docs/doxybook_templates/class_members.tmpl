@@ -1,0 +1,91 @@
+{%- if exists("publicClasses") %}## Public Classes
+
+  {%- include "table_header_brief.tmpl" -%}
+  {%- for child in publicClasses -%}{{- render("table_row_brief.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("protectedClasses") %}## Protected Classes
+
+  {%- for child in publicClasses -%}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{% if exists("publicTypes") %}## Public Types
+
+<code class="doxybook">
+{%- for child in publicTypes -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{% if exists("protectedTypes") %}## Protected Types
+
+<code class="doxybook">
+{%- for child in protectedTypes -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{%- if exists("publicAttributes") %}## Public Member Variables
+
+<code class="doxybook">
+{%- for child in publicAttributes -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{%- if exists("protectedAttributes") %}## Protected Member Variables
+
+<code class="doxybook">
+{%- for child in protectedAttributes -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{%- if exists("publicFunctions") %}## Public Member Functions
+
+<code class="doxybook">
+{%- for child in publicFunctions -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{{- comment("") -}}
+  <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{%- if exists("protectedFunctions") %}## Protected Member Functions
+
+<code class="doxybook">
+{%- for child in protectedFunctions -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{{- comment("") -}}
+  <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{% if exists("friends") %}## Friends
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in friends %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**{% if child.type != "class" or child.type != "struct"%}({% for param in child.params %}{{param.type}} {{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% if child.const %} const{% endif %}{% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}

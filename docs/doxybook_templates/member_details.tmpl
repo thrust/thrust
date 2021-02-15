@@ -1,31 +1,36 @@
+{% include "header_member_details.tmpl" %}
+{%- if kind == "enum" -%}
+  {%- include "table_header_enum.tmpl" -%}
+  {%- for enumerator in enumvalues -%}{{- render("table_row_enum.tmpl", enumerator) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if kind in ["typedef", "using"] -%}
+  <code class="doxybook">
+  {% include "synopsis_template_parameters.tmpl" -%}
+  <span>{%- include "synopsis_kind.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- comment("") -}}
+  </code>
+{% endif -%}
+{%- if kind in ["variable", "property"] -%}
+  <code class="doxybook">
+  {% include "synopsis_template_parameters.tmpl" -%}
+  <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- comment("") -}}
+  </code>
+{% endif -%}
 {%- if kind in ["function", "slot", "signal", "event"] -%}
-<code class="doxybook">
-{% include "synopsis_template_parameters.tmpl" -%}
-{% include "synopsis_function_return_type_and_leading_specifiers.tmpl" -%}
-<span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>
-</code>
-{%- endif -%}
-{% if kind == "enum" -%}
-| Enumerator | Value | Description |
-| ---------- | ----- | ----------- |
-{% for enumvalue in enumvalues %}| {{enumvalue.name}} | {% if existsIn(enumvalue, "initializer") %}{{replace(enumvalue.initializer, "= ", "")}}{% endif %} | {% if existsIn(enumvalue, "brief") %}{{enumvalue.brief}}{% endif %} {% if existsIn(enumvalue, "details") %}{{enumvalue.details}}{% endif %} |
-{% endfor %}
-{% endif %}{% if kind in ["variable", "property"] %}```cpp
-{% if static %}static {% endif %}{% if exists("typePlain") %}{{typePlain}} {% endif %}{{name}}{% if exists("initializer") %} {{initializer}}{% endif %};
-```{% endif %}{% if kind == "typedef" %}```cpp
-{{definition}};
-```{% endif %}{% if kind == "using" %}```cpp
-{% if exists("templateParams") %}template <{% for param in templateParams %}{{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},
-{% endif %}{% endfor %}>
-{% endif %}{{definition}};
-```{% endif %}{% if kind == "friend" %}```cpp
+  <code class="doxybook">
+  {% include "synopsis_template_parameters.tmpl" -%}
+  <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}</span>{{- comment("") -}}
+  <span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>{{- comment("") -}}
+  </code>
+{% endif -%}
+{%- if kind == "friend" -%}```cpp
 friend {% if exists("typePlain") %}{{typePlain}} {% endif %}{{name}}{% if exists("params") %}{% endif %}{% if length(params) > 0 %}(
 {% for param in params %}    {{param.typePlain}} {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}
 {% endfor %}){% else if typePlain != "class" %}(){% endif %};
-```{% endif %}{% if kind == "define" %}```cpp
+```{% endif -%}
+{%- if kind == "define" -%}```cpp
 #define {{name}}{% if exists("params") %}(
 {% for param in params %}    {{param.name}}{% if existsIn(param, "defvalPlain") %} ={{param.defvalPlain}}{% endif %}{% if not loop.is_last %},{% endif %}
 {% endfor %}){% endif %}{% if exists("initializer") %} {{initializer}}{% endif %}
-```{% endif %}
-
-{% include "details" %}
+```{% endif -%}
+{% include "details.tmpl" -%}

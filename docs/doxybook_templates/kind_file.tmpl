@@ -1,18 +1,10 @@
-{% include "header" %}
-
-{% include "nonclass_members_tables" %}
-
-{% if hasDetails %}## Detailed Description
-
-{% include "details" %}{% endif %}
-
-{% include "nonclass_members_details" %}
-
-{% if exists("programlisting")%}## Source code
+{% include "header.tmpl" -%}
+{%- if hasDetails -%}{% include "details.tmpl" -%}{%- endif -%}
+{% include "nonclass_members_details.tmpl" -%}
+{% include "nonclass_members.tmpl" -%}
+{%- if exists("programlisting") -%}
 
 ```cpp
 {{programlisting}}
 ```
-{% endif %}
-
-{% include "footer" %}
+{%- endif -%}

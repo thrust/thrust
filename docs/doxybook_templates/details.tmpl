@@ -163,7 +163,7 @@
     {%- endif -%}
   {%- else -%}
     {%- for base in baseClasses -%}
-      {%- if existsIn(first(baseClasses), "url") -%}* [`{{base.name}}`]({{base.url}})
+      {%- if existsIn(baseClasses, "url") -%}* [`{{base.name}}`]({{base.url}})
       {%- else -%}* `{{base.name}}`
       {%- endif -%}
     {%- endfor -%}

@@ -1,0 +1,71 @@
+{%- if exists("groups") %}## Groups
+
+  {%- for child in sort(groups) -%}* **[{{child.title}}]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("dirs") %}## Directories
+
+  {%- for child in dirs -%}* **[`{{child.name}}`]({{child.url}})**{% if existsIn(child, "brief") %}: {{child.brief}}{% endif %}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("files") %}## Files
+
+  {%- include "table_header_brief.tmpl" -%}
+  {%- for child in files -%}{{- render("table_row_brief.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("namespaces") %}## Namespaces
+
+  {%- include "table_header_brief.tmpl" -%}
+  {%- for child in namespaces -%}{{- render("table_row_brief.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("publicClasses") %}## Classes
+
+  {%- include "table_header_brief.tmpl" -%}
+  {%- for child in publicClasses -%}{{- render("table_row_brief.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{% if exists("publicTypes") %}## Types
+
+<code class="doxybook">
+{%- for child in publicTypes -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{% if exists("publicAttributes") %}## Variables
+
+<code class="doxybook">
+{%- for child in publicAttributes -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{%- if exists("publicFunctions") %}## Functions
+
+<code class="doxybook">
+{%- for child in publicFunctions -%}
+  {{- render("synopsis_brief.tmpl", child) -}}
+  {{- render("synopsis_template_parameters.tmpl", child) -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{{- comment("") -}}
+  <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
+  {%- if not loop.is_last -%}<br>{%- endif -%}
+{%- endfor -%}
+</code>
+
+{% endif -%}
+{% if exists("defines") %}## Defines
+
+|                | Name           |
+| -------------- | -------------- |
+{% for child in defines %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**{% if existsIn(child, "params") %}({% for param in child.params %}{{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
+{% endfor %}{% endif %}

@@ -1,11 +1,4 @@
-{% include "header" %}
-
-{% include "nonclass_members_tables" %}
-
-{% if hasDetails %}## Detailed Description
-
-{% include "details" %}{% endif %}
-
-{% include "nonclass_members_details" %}
-
-{% include "footer" %}
+{% include "header.tmpl" -%}
+{%- if hasDetails %}{% include "details.tmpl" -%}{%- endif -%}
+{% include "nonclass_members.tmpl" -%}
+{% include "nonclass_members_details.tmpl" -%}

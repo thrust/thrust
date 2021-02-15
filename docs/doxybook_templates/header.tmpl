@@ -4,12 +4,12 @@
 {%- endif -%}
 {%- if exists("summary") -%}summary: {{summary}}
 {%- endif -%}
-{% include "meta" -%}
+{% include "meta.tmpl" -%}
 ---
 
 {%- if exists("title") -%}
   {%- if exists("kind") -%}
-    {%- if kind == "class" or kind == "struct"-%}# `{{title}}`
+    {%- if kind == "class" or kind == "struct" or kind == "namespace" -%}# {{title(kind)}} `{{title}}`
     {%- else -%}# {{title}}
     {%- endif -%}
   {%- else -%}# {{title}}
@@ -18,4 +18,4 @@
   {%- if kind != "page" -%}# {{name}} {{title(kind)}} Reference
   {%- else -%}# {{name}}
   {%- endif -%}
-{%- endif -%}
+{%- endif %}

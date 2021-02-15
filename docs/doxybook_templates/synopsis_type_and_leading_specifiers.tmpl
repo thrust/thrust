@@ -1,0 +1,4 @@
+{%- if exists("virtual") %}{% if virtual %}virtual {% endif %}{% endif -%}
+{%- if static %}static {% endif -%}
+{%- if exists("explicit") %}{% if explicit %}explicit {% endif %}{% endif -%}
+{%- if exists("type") %}{{type}} {% endif -%}

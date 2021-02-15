@@ -1,30 +1,25 @@
-{% if exists("publicTypes") %}## Public Types Documentation
+{%- if exists("publicTypes") %}## Public Types Documentation
 
-{% for child in publicTypes %}<h3 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(name) }}::{{ escape(child.name) }}</code></h3>
+  {%- for child in publicTypes %}{{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("protectedTypes") %}## Protected Types Documentation
 
-{{ render("member_details", child) }}
-{% endfor %}{% endif %}
-{% if exists("protectedTypes") %}## Protected Types Documentation
+  {%- for child in protectedTypes %}{{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("publicFunctions") %}## Public Functions Documentation
 
-{% for child in protectedTypes %}<h3 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(name) }}::{{ escape(child.name) }}</code></h3>
+  {%- for child in publicFunctions %}{{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("protectedFunctions") %}## Protected Functions Documentation
 
-{{ render("member_details", child) }}
-{% endfor %}{% endif %}
-{% if exists("publicFunctions") %}## Public Functions Documentation
+  {%- for child in protectedFunctions %}{{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
+{%- if exists("friends") %}## Friends
 
-{% for child in publicFunctions %}<h3 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(name) }}::{{ escape(child.name) }}</code></h3>
-
-{{ render("member_details", child) }}
-{% endfor %}{% endif %}
-{% if exists("protectedFunctions") %}## Protected Functions Documentation
-
-{% for child in protectedFunctions %}<h3 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(name) }}::{{ escape(child.name) }}</code></h3>
-
-{{ render("member_details", child) }}
-{% endfor %}{% endif %}
-{% if exists("friends") %}## Friends
-
-{% for child in friends %}<h3 id="{{child.kind}}-{{child.name}}">{{ title(child.kind) }} <code>{{ escape(name) }}::{{ escape(child.name) }}</code></h3>
-
-{{ render("member_details", child) }}
-{% endfor %}{% endif %}
+  {%- for child in friends %}{{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{% endif -%}
