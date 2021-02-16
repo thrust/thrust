@@ -1,10 +1,4 @@
 {% include "header.tmpl" -%}
-<code class="doxybook">
-{%- if exists("includes") -%}<span>#include {{includes}}</span>{%- endif -%}
-<br>
-{% include "synopsis_template_parameters.tmpl" -%}
-<span>{%- include "synopsis_kind_abbreviated.tmpl" -%}{{name}};</span>
-</code>
 {%- if hasDetails -%}{% include "details.tmpl" -%}{%- endif -%}
 {% include "class_members.tmpl" -%}
 {%- if hasAdditionalMembers -%}{% include "class_members_inherited.tmpl" -%}{%- endif -%}

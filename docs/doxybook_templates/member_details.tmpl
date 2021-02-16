@@ -7,20 +7,20 @@
 {%- if kind in ["typedef", "using"] -%}
   <code class="doxybook">
   {% include "synopsis_template_parameters.tmpl" -%}
-  <span>{%- include "synopsis_kind.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- comment("") -}}
+  <span>{%- include "synopsis_kind.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{#- -#}
   </code>
 {% endif -%}
 {%- if kind in ["variable", "property"] -%}
   <code class="doxybook">
   {% include "synopsis_template_parameters.tmpl" -%}
-  <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- comment("") -}}
+  <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{#- -#}
   </code>
 {% endif -%}
 {%- if kind in ["function", "slot", "signal", "event"] -%}
   <code class="doxybook">
   {% include "synopsis_template_parameters.tmpl" -%}
-  <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}</span>{{- comment("") -}}
-  <span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>{{- comment("") -}}
+  <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}</span>{#- -#}
+  <span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>{#- -#}
   </code>
 {% endif -%}
 {%- if kind == "friend" -%}```cpp

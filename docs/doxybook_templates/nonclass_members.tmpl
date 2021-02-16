@@ -56,7 +56,7 @@
 {%- for child in publicFunctions -%}
   {{- render("synopsis_brief.tmpl", child) -}}
   {{- render("synopsis_template_parameters.tmpl", child) -}}
-  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{{- comment("") -}}
+  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{#- -#}
   <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
   {%- if not loop.is_last -%}<br>{%- endif -%}
 {%- endfor -%}

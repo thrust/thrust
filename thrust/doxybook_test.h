@@ -27,6 +27,12 @@ namespace thrust
  *  \{
  */
 
+/*! \brief \c test_predefined_friend_class is a class intended to exercise and
+ *  test Doxybook rendering.
+ */
+template <typename... Z>
+struct test_predefined_friend_class {};
+
 /*! \brief \c test_class is a class intended to exercise and test Doxybook
  *  rendering.
  *
@@ -66,6 +72,9 @@ struct test_class
 
   template <typename Z>
   friend struct test_friend_class;
+
+  template <typename... Z>
+  friend struct test_predefined_friend_class;
 };
 
 /*! \brief \c test_function is a function intended to exercise and test Doxybook
@@ -73,6 +82,19 @@ struct test_class
  */
 template <typename T>
 void test_function(T const& a, test_class<T, T const>&& b);
+
+/*! \brief \c test_parameter_overflow is a function intended to test Doxybook's
+ *  rendering of function and template parameters that exceed the length of a
+ *  line.
+ */
+template <typename T = test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int>,
+  typename U = test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int>,
+  typename V = test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int>
+>
+test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int, int, int, int>
+test_function(test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int> t,
+  test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int> u,
+  test_predefined_friend_class<int, int, int, int, int, int, int, int, int, int, int, int> v);
 
 /*! \brief \c test_namespace is a namespace intended to exercise and test
  *  Doxybook rendering.
