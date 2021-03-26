@@ -569,15 +569,7 @@ template<typename T>
 
 struct largest_available_float
 {
-#if defined(__CUDA_ARCH__)
-#  if (__CUDA_ARCH__ < 130)
-  typedef float type;
-#  else
   typedef double type;
-#  endif
-#else
-  typedef double type;
-#endif
 };
 
 // T1 wins if they are both the same size
