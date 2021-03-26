@@ -23,7 +23,10 @@
 #if (defined(__NVCOMPILER_CUDA__) || defined(__CUDA_ARCH__)) && \
     THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
 #include <thrust/system/cuda/detail/terminate.h>
+#include <cub/detail/target.cuh>
 #endif
+
+
 
 namespace thrust
 {
@@ -46,15 +49,15 @@ __host__ __device__
     // note that we pass cnt to deallocate, not a value derived from result.second
     deallocate(result.first, cnt);
 
-    if (THRUST_IS_HOST_CODE) {
-      #if THRUST_INCLUDE_HOST_CODE
-        throw thrust::system::detail::bad_alloc("temporary_buffer::allocate: get_temporary_buffer failed");
-      #endif
-    } else {
-      #if THRUST_INCLUDE_DEVICE_CODE && THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
-        thrust::system::cuda::detail::terminate_with_message("temporary_buffer::allocate: get_temporary_buffer failed");
-      #endif
-    }
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+    NV_IF_TARGET(NV_IS_HOST, (
+      throw thrust::system::detail::bad_alloc("temporary_buffer::allocate: get_temporary_buffer failed");
+    ), ( // NV_IS_DEVICE
+      thrust::system::cuda::detail::terminate_with_message("temporary_buffer::allocate: get_temporary_buffer failed");
+    ));
+#else
+    throw thrust::system::detail::bad_alloc("temporary_buffer::allocate: get_temporary_buffer failed");
+#endif
   } // end if
 
   return result.first;

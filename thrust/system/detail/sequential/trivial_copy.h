@@ -24,6 +24,10 @@
 #include <cstring>
 #include <thrust/system/detail/sequential/general_copy.h>
 
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+#include <cub/detail/target.cuh>
+#endif
+
 namespace thrust
 {
 namespace system
@@ -41,16 +45,19 @@ __host__ __device__
                     T *result)
 {
   T* return_value = NULL;
-  if (THRUST_IS_HOST_CODE) {
-    #if THRUST_INCLUDE_HOST_CODE
-      std::memmove(result, first, n * sizeof(T));
-      return_value = result + n;
-    #endif
-  } else {
-    #if THRUST_INCLUDE_DEVICE_CODE
-      return_value = thrust::system::detail::sequential::general_copy_n(first, n, result);
-    #endif
-  }
+
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+  NV_IF_TARGET(NV_IS_HOST, (
+    std::memmove(result, first, n * sizeof(T));
+    return_value = result + n;
+  ), ( // NV_IS_DEVICE:
+    return_value = thrust::system::detail::sequential::general_copy_n(first, n, result);
+  ));
+#else
+  std::memmove(result, first, n * sizeof(T));
+  return_value = result + n;
+#endif
+
   return return_value;
 } // end trivial_copy_n()
 

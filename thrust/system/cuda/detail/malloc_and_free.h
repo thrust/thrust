@@ -23,12 +23,15 @@
 #include <thrust/detail/raw_reference_cast.h>
 #include <thrust/detail/seq.h>
 #include <thrust/system/cuda/config.h>
-#ifdef THRUST_CACHING_DEVICE_MALLOC
-#include <cub/util_allocator.cuh>
-#endif
 #include <thrust/system/cuda/detail/util.h>
 #include <thrust/system/detail/bad_alloc.h>
 #include <thrust/detail/malloc_and_free.h>
+
+#ifdef THRUST_CACHING_DEVICE_MALLOC
+#include <cub/util_allocator.cuh>
+#endif
+
+#include <cub/detail/target.cuh>
 
 namespace thrust
 {
@@ -54,26 +57,35 @@ void *malloc(execution_policy<DerivedPolicy> &, std::size_t n)
 {
   void *result = 0;
 
-  if (THRUST_IS_HOST_CODE) {
-    #if THRUST_INCLUDE_HOST_CODE
-      #ifdef __CUB_CACHING_MALLOC
-        cub::CachingDeviceAllocator &alloc = get_allocator();
-        cudaError_t status = alloc.DeviceAllocate(&result, n);
-      #else
-        cudaError_t status = cudaMalloc(&result, n);
-      #endif
+  // need to repeat a lot of code here because we can't use #if inside of the
+  // NV_IF_TARGET macro.
+  // The device path is the same either way, but the host allocations differ.
+#ifdef __CUB_CACHING_MALLOC
+  NV_IF_TARGET(NV_IS_HOST, (
+    cub::CachingDeviceAllocator &alloc = get_allocator();
+    cudaError_t status = alloc.DeviceAllocate(&result, n);
 
-      if(status != cudaSuccess)
-      {
-        cudaGetLastError(); // Clear global CUDA error state.
-        throw thrust::system::detail::bad_alloc(thrust::cuda_category().message(status).c_str());
-      }
-    #endif
-  } else {
-    #if THRUST_INCLUDE_DEVICE_CODE
-      result = thrust::raw_pointer_cast(thrust::malloc(thrust::seq, n));
-    #endif
-  }
+    if (status != cudaSuccess)
+    {
+      cudaGetLastError(); // Clear global CUDA error state.
+      throw thrust::system::detail::bad_alloc(thrust::cuda_category().message(status).c_str());
+    }
+  ), ( // NV_IS_DEVICE
+    result = thrust::raw_pointer_cast(thrust::malloc(thrust::seq, n));
+  ));
+#else // not __CUB_CACHING_MALLOC
+  NV_IF_TARGET(NV_IS_HOST, (
+    cudaError_t status = cudaMalloc(&result, n);
+
+    if (status != cudaSuccess)
+    {
+      cudaGetLastError(); // Clear global CUDA error state.
+      throw thrust::system::detail::bad_alloc(thrust::cuda_category().message(status).c_str());
+    }
+  ), ( // NV_IS_DEVICE
+    result = thrust::raw_pointer_cast(thrust::malloc(thrust::seq, n));
+  ));
+#endif
 
   return result;
 } // end malloc()
@@ -83,21 +95,25 @@ template<typename DerivedPolicy, typename Pointer>
 __host__ __device__
 void free(execution_policy<DerivedPolicy> &, Pointer ptr)
 {
-  if (THRUST_IS_HOST_CODE) {
-    #if THRUST_INCLUDE_HOST_CODE
-      #ifdef __CUB_CACHING_MALLOC
-        cub::CachingDeviceAllocator &alloc = get_allocator();
-        cudaError_t status = alloc.DeviceFree(thrust::raw_pointer_cast(ptr));
-      #else
-        cudaError_t status = cudaFree(thrust::raw_pointer_cast(ptr));
-      #endif
-      cuda_cub::throw_on_error(status, "device free failed");
-    #endif
-  } else {
-    #if THRUST_INCLUDE_DEVICE_CODE
-      thrust::free(thrust::seq, ptr);
-    #endif
-  }
+  // need to repeat a lot of code here because we can't use #if inside of the
+  // NV_IF_TARGET macro.
+  // The device path is the same either way, but the host deallocations differ.
+#ifdef __CUB_CACHING_MALLOC
+  NV_IF_TARGET(NV_IS_HOST, (
+    cub::CachingDeviceAllocator &alloc = get_allocator();
+    cudaError_t status = alloc.DeviceFree(thrust::raw_pointer_cast(ptr));
+    cuda_cub::throw_on_error(status, "device free failed");
+  ), ( // NV_IS_DEVICE
+    thrust::free(thrust::seq, ptr);
+  ));
+#else // not __CUB_CACHING_MALLOC
+  NV_IF_TARGET(NV_IS_HOST, (
+    cudaError_t status = cudaFree(thrust::raw_pointer_cast(ptr));
+    cuda_cub::throw_on_error(status, "device free failed");
+  ), ( // NV_IS_DEVICE
+    thrust::free(thrust::seq, ptr);
+  ));
+#endif
 } // end free()
 
 }    // namespace cuda_cub

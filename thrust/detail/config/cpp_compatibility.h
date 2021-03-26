@@ -64,21 +64,3 @@
 #    define THRUST_INLINE_INTEGRAL_MEMBER_CONSTANT static const
 #  endif
 #endif
-
-#if defined(__NVCOMPILER_CUDA__)
-#  define THRUST_IS_DEVICE_CODE __builtin_is_device_code()
-#  define THRUST_IS_HOST_CODE (!__builtin_is_device_code())
-#  define THRUST_INCLUDE_DEVICE_CODE 1
-#  define THRUST_INCLUDE_HOST_CODE 1
-#elif defined(__CUDA_ARCH__)
-#  define THRUST_IS_DEVICE_CODE 1
-#  define THRUST_IS_HOST_CODE 0
-#  define THRUST_INCLUDE_DEVICE_CODE 1
-#  define THRUST_INCLUDE_HOST_CODE 0
-#else
-#  define THRUST_IS_DEVICE_CODE 0
-#  define THRUST_IS_HOST_CODE 1
-#  define THRUST_INCLUDE_DEVICE_CODE 0
-#  define THRUST_INCLUDE_HOST_CODE 1
-#endif
-

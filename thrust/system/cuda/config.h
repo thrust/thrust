@@ -41,10 +41,6 @@
 #  define THRUST_RUNTIME_FUNCTION __host__ __forceinline__
 #endif
 
-#ifdef __CUDA_ARCH__
-#define THRUST_DEVICE_CODE
-#endif
-
 #ifdef THRUST_AGENT_ENTRY_NOINLINE
 #define THRUST_AGENT_ENTRY_INLINE_ATTR __noinline__
 #else
