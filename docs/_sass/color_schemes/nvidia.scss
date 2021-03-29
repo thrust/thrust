@@ -11,19 +11,22 @@ code.highlighter-rouge
 { font-size: 0.85em !important; }
 
 /* Code blocks. */
-pre.highlight code
-{
-  font-size: 0.9em !important; 
-  /* Line wrap with an indent of four characters. */
-}
+pre.highlight code { font-size: 0.9em !important; }
 
 /* Doxybook generated code snippets. */
-code.doxybook
-{ display: block; }
+code.doxybook { display: block; }
 
 /* Line wrap with an indent of four characters in Doxybook-generated code snippets. */
 code.doxybook span
 { display: block; text-indent: -4ex !important; padding-left: 4ex !important; }
+
+/* Line wrap with an indent of eight characters in Doxybook-generated code snippets. */
+code.doxybook span.doxybook-indent2 span
+{ display: block; text-indent: -8ex !important; padding-left: 8ex !important; }
+
+/* Disable line wrap for indent <span>s. */
+code.doxybook span.doxybook-indent2
+{ display: block; text-indent: 0ex !important; padding-left: 0ex !important; }
 
 h3 { margin-bottom: 1.0em !important; }
 
@@ -51,6 +54,12 @@ div.highlighter-rouge,
 pre.highlight code,
 code.doxybook
 { background-color: #111 !important; }
+
+span.doxybook-comment code
+{ background-color: #111 !important; border: none !important; }
+
+span.doxybook-indent2 span:before
+{ font-family: $mono-font-family; content: "\00a0\00a0"; }
 
 .highlight span.err { color: #ff0000; font-weight: bold; } /* Error */
 
@@ -90,7 +99,7 @@ code.doxybook
 .highlight span.c1, /* Comment.Single */
 .highlight span.cs, /* Comment.Special */
 span.doxybook-comment
-{ color: #009966; font-style: italic }
+{ color: #009966; font-family: $body-font-family; font-style: italic; }
 
 .highlight span.cp  /* Preprocessor */
 .highlight span.kn, /* Keyword.Namespace */
@@ -98,11 +107,11 @@ span.doxybook-comment
 
 .highlight span.o, /* Operator */
 .highlight span.p  /* Punctuation */
-{ color: #00ff00 }
+{ color: #00ff00; }
 
-.highlight span.ge { font-style: italic } /* Generic.Emph */
+.highlight span.ge { font-style: italic; } /* Generic.Emph */
 
-.highlight span.gs { font-weight: bold } /* Generic.Strong */
+.highlight span.gs { font-weight: bold; } /* Generic.Strong */
 
 .highlight span.l,  /* Literal */
 .highlight span.ld, /* Literal.Date */
@@ -124,15 +133,15 @@ span.doxybook-comment
 .highlight span.sr, /* Literal.String.Regex */
 .highlight span.s1, /* Literal.String.Single */
 .highlight span.ss  /* Literal.String.Symbol */
-{ color: #119911 }
+{ color: #119911; }
 
-.highlight span.w { color: #00cc00 } /* Text.Whitespace */
+.highlight span.w { color: #00cc00; } /* Text.Whitespace */
 
 .highlight span.gh, /* Generic.Heading */
 .highlight span.gp, /* Generic.Prompt */
 .highlight span.gu  /* Generic.Subheading */
-{ color: #00ff00; font-weight: bold }
+{ color: #00ff00; font-weight: bold; }
 
-.highlight span.gd { color: #ff0000 } /* Generic.Deleted */
-.highlight span.gi { color: #00ff00 } /* Generic.Inserted */
+.highlight span.gd { color: #ff0000; } /* Generic.Deleted */
+.highlight span.gi { color: #00ff00; } /* Generic.Inserted */
 

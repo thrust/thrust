@@ -5,25 +5,16 @@
 {%- endif -%}
 {%- include "synopsis_template_parameters.tmpl" -%}
 <span>{%- include "synopsis_kind_abbreviated.tmpl" -%}{{name}} {</span>
-{%- if exists("publicClasses") or exists("publicTypes") or exists("publicAttributes") or exists("publicFunctions") or exists("friends") -%}
+{%- if exists("publicClasses") or exists("publicTypes") or exists("publicAttributes") or exists("publicFunctions") -%}
 <span>public:</span>
 {%- endif -%}
+<span class="doxybook-indent2">
 {%- if exists("publicClasses") -%}
   {%- for child in publicClasses -%}
-    <br>
+    <br>{#- -#}
     {{- render("synopsis_brief.tmpl", child) -}}
     {{- render("synopsis_template_parameters.tmpl", load(child.refid)) -}}
-    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>;</span>
-  {%- endfor -%}
-{%- endif -%}
-{%- if exists("friends") -%}
-  {%- for child in friends -%}
-    {%- if child.type == "class" or child.type == "struct" -%}
-      <br>{#- -#}
-      {{- render("synopsis_brief.tmpl", child) -}}
-      {{- render("synopsis_template_parameters.tmpl", child) -}}
-      <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>;</span>
-    {%- endif -%}
+    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{stripNamespace(child.name)}}</a></b>;</span>
   {%- endfor -%}
 {%- endif -%}
 {%- if exists("publicTypes") -%}
@@ -51,16 +42,6 @@
     <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
   {%- endfor -%}
 {%- endif -%}
-{%- if exists("friends") -%}
-  {%- for child in friends -%}
-    {%- if child.type == "class" or child.type == "struct" -%}
-      <br>{#- -#}
-      {{- render("synopsis_brief.tmpl", child) -}}
-      {{- render("synopsis_template_parameters.tmpl", child) -}}
-      <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{#- -#}
-      <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
-    {%- endif -%}
-  {%- endfor -%}
-{%- endif -%}
-};
+</span>
+<span>};</span>
 </code>

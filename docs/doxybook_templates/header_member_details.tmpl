@@ -1,2 +1,2 @@
-<h3 id="{{kind}}-{{name}}">{% if kind == "using" %}Type Alias{% else %}{{title(kind)}}{% endif %}{% if kind == "enum" and strong %} Class{% endif %} <code>{{escape(name)}}::{{escape(name)}}</code></h3>
+<h3 id="{{child.kind}}-{{child.name}}">{% if child.kind == "using" %}Type Alias{% else %}{{title(child.kind)}}{% endif %}{% if child.kind == "enum" and child.strong %} Class{% endif %} <code>{{escape(name)}}::{{escape(child.name)}}</code></h3>
 

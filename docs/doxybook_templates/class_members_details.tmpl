@@ -1,25 +1,43 @@
-{%- if exists("publicTypes") %}## Public Types Documentation
-
-  {%- for child in publicTypes %}{{- render("member_details.tmpl", child) -}}
-  {%- endfor %}
+{%- if exists("publicTypes") or exists("protectedTypes") -%}## Types
 {% endif -%}
-{%- if exists("protectedTypes") %}## Protected Types Documentation
-
-  {%- for child in protectedTypes %}{{- render("member_details.tmpl", child) -}}
+{%- if exists("publicTypes") -%}
+  {%- for child in publicTypes -%}
+    {% include "header_member_details.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{% endif -%}
-{%- if exists("publicFunctions") %}## Public Functions Documentation
-
-  {%- for child in publicFunctions %}{{- render("member_details.tmpl", child) -}}
+{%- endif -%}
+{%- if exists("protectedTypes") -%}
+  {%- for child in protectedTypes -%}
+    {% include "header_member_details.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
+{%- endif -%}
+{%- if exists("publicTypes") or exists("protectedTypes") %}## Data Members
 {% endif -%}
-{%- if exists("protectedFunctions") %}## Protected Functions Documentation
-
-  {%- for child in protectedFunctions %}{{- render("member_details.tmpl", child) -}}
+{%- if exists("publicAttributes") -%}
+  {%- for child in publicAttributes -%}
+    {% include "header_member_details.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{% endif -%}
-{%- if exists("friends") %}## Friends
-
-  {%- for child in friends %}{{- render("member_details.tmpl", child) -}}
+{%- endif -%}
+{%- if exists("protectedAttributes") -%}
+  {%- for child in protectedAttributes -%}
+    {% include "header_member_details.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
+{%- endif -%}
+{%- if exists("publicFunctions") or exists("protectedFunctions") %}## Function Members
 {% endif -%}
+{%- if exists("publicFunctions") -%}
+  {%- for child in publicFunctions -%}
+    {% include "header_member_details.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{%- endif -%}
+{%- if exists("protectedFunctions") -%}
+  {%- for child in protectedFunctions -%}
+    {% include "header_member_details.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{%- endif -%}
+

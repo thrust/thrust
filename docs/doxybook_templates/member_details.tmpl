@@ -1,4 +1,3 @@
-{% include "header_member_details.tmpl" %}
 {%- if kind == "enum" -%}
   {%- include "table_header_enum.tmpl" -%}
   {%- for enumerator in enumvalues -%}{{- render("table_row_enum.tmpl", enumerator) -}}
