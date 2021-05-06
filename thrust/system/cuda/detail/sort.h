@@ -33,8 +33,6 @@
 #include <thrust/system/cuda/config.h>
 #include <thrust/system/cuda/detail/core/agent_launcher.h>
 #include <thrust/system/cuda/detail/core/util.h>
-#include <cub/device/device_radix_sort.cuh>
-
 #include <thrust/system/cuda/detail/execution_policy.h>
 #include <thrust/system/cuda/detail/par_to_seq.h>
 #include <thrust/detail/trivial_sequence.h>
@@ -45,6 +43,9 @@
 #include <thrust/sequence.h>
 #include <thrust/detail/alignment.h>
 #include <thrust/type_traits/is_contiguous_iterator.h>
+
+#include <cub/detail/ptx_dispatch.cuh>
+#include <cub/device/device_radix_sort.cuh>
 
 namespace thrust
 {
@@ -136,94 +137,65 @@ namespace __merge_sort {
             cub::BlockStoreAlgorithm _STORE_ALGORITHM  = cub::BLOCK_STORE_DIRECT>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS      = _BLOCK_THREADS,
-      ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD,
-    };
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    static const cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
+    static constexpr cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static constexpr cub::BlockStoreAlgorithm STORE_ALGORITHM =
+      _STORE_ALGORITHM;
   }; // PtxPolicy
 
-
-  template<class Arch, class T>
-  struct Tuning;
-
-  template<class T>
-  struct Tuning<sm35,T>
+  template <typename T>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    const static int INPUT_SIZE = sizeof(T);
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
 
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 11,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 11;
+    static constexpr int ITEMS_PER_THREAD =
+      CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+              CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / INPUT_SIZE)));
 
-    typedef PtxPolicy<256,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };
+    using Policy = PtxPolicy<256,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
+  }; // Tuning350
 
-  template<class T>
-  struct Tuning<sm52,T>
+  template <typename T>
+  struct Tuning520 : cub::detail::ptx_base<520>
   {
-    const static int INPUT_SIZE = sizeof(T);
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
 
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 15,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 15;
+    static constexpr int ITEMS_PER_THREAD =
+      CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+              CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / INPUT_SIZE)));
 
-    typedef PtxPolicy<512,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };
+    using Policy = PtxPolicy<512,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
+  }; // Tuning520
 
-  template<class T>
-  struct Tuning<sm60,T>
+  template <typename T>
+  struct Tuning600 : cub::detail::ptx_base<600>
   {
-    const static int INPUT_SIZE = sizeof(T);
+    const static int INPUT_SIZE = static_cast<int>(sizeof(T));
 
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 17,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 17;
+    static constexpr int ITEMS_PER_THREAD =
+      CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+              CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T))));
 
-    typedef PtxPolicy<256,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };
-
-  template<class T>
-  struct Tuning<sm30,T>
-  {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
+    using Policy = PtxPolicy<256,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_DEFAULT,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
   template <class KeysIt,
@@ -237,21 +209,28 @@ namespace __merge_sort {
     typedef typename iterator_traits<KeysIt>::value_type key_type;
     typedef typename iterator_traits<ItemsIt>::value_type item_type;
 
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, key_type>::type
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning600<key_type>,
+                                           Tuning520<key_type>,
+                                           Tuning350<key_type>>;
+
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch,key_type> tuning;
+      using KeysLoadIt  = typename core::LoadIterator<PtxPlan, KeysIt>::type;
+      using ItemsLoadIt = typename core::LoadIterator<PtxPlan, ItemsIt>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, KeysIt>::type  KeysLoadIt;
-      typedef typename core::LoadIterator<PtxPlan, ItemsIt>::type ItemsLoadIt;
+      using BlockLoadKeys = typename core::BlockLoad<PtxPlan, KeysLoadIt>::type;
+      using BlockLoadItems =
+        typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type;
 
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadIt>::type  BlockLoadKeys;
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type BlockLoadItems;
-
-      typedef typename core::BlockStore<PtxPlan, KeysIt>::type     BlockStoreKeysIt;
-      typedef typename core::BlockStore<PtxPlan, ItemsIt>::type    BlockStoreItemsIt;
-      typedef typename core::BlockStore<PtxPlan, key_type*>::type  BlockStoreKeysRaw;
-      typedef typename core::BlockStore<PtxPlan, item_type*>::type BlockStoreItemsRaw;
+      using BlockStoreKeysIt = typename core::BlockStore<PtxPlan, KeysIt>::type;
+      using BlockStoreItemsIt =
+        typename core::BlockStore<PtxPlan, ItemsIt>::type;
+      using BlockStoreKeysRaw =
+        typename core::BlockStore<PtxPlan, key_type *>::type;
+      using BlockStoreItemsRaw =
+        typename core::BlockStore<PtxPlan, item_type *>::type;
 
       union TempStorage
       {
@@ -267,27 +246,23 @@ namespace __merge_sort {
       };    // union TempStorage
     };      // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::KeysLoadIt         KeysLoadIt;
-    typedef typename ptx_plan::ItemsLoadIt        ItemsLoadIt;
-    typedef typename ptx_plan::BlockLoadKeys      BlockLoadKeys;
-    typedef typename ptx_plan::BlockLoadItems     BlockLoadItems;
-    typedef typename ptx_plan::BlockStoreKeysIt   BlockStoreKeysIt;
-    typedef typename ptx_plan::BlockStoreItemsIt  BlockStoreItemsIt;
-    typedef typename ptx_plan::BlockStoreKeysRaw  BlockStoreKeysRaw;
-    typedef typename ptx_plan::BlockStoreItemsRaw BlockStoreItemsRaw;
-    typedef typename ptx_plan::TempStorage        TempStorage;
-
-    enum
-    {
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using KeysLoadIt         = typename ActivePtxPlan::KeysLoadIt;
+      using ItemsLoadIt        = typename ActivePtxPlan::ItemsLoadIt;
+      using BlockLoadKeys      = typename ActivePtxPlan::BlockLoadKeys;
+      using BlockLoadItems     = typename ActivePtxPlan::BlockLoadItems;
+      using BlockStoreKeysIt   = typename ActivePtxPlan::BlockStoreKeysIt;
+      using BlockStoreItemsIt  = typename ActivePtxPlan::BlockStoreItemsIt;
+      using BlockStoreKeysRaw  = typename ActivePtxPlan::BlockStoreKeysRaw;
+      using BlockStoreItemsRaw = typename ActivePtxPlan::BlockStoreItemsRaw;
+      using TempStorage        = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
       //---------------------------------------------------------------------
       // Per thread data
       //---------------------------------------------------------------------
@@ -592,7 +567,14 @@ namespace __merge_sort {
         Size tile_idx      = blockIdx.x;
         Size num_tiles     = gridDim.x;
         Size tile_base     = tile_idx * ITEMS_PER_TILE;
-        int  items_in_tile = min<int>(keys_count - tile_base, ITEMS_PER_TILE);
+
+        // ITEMS_PER_TILE is host static constexpr variable, and min(...) takes
+        // a const reference. We cannot take the address of a static host var
+        // from device code. Use a local instead.
+        constexpr auto local_items_per_tile = ITEMS_PER_TILE;
+        int items_in_tile = min<int>(keys_count - tile_base,
+                                     local_items_per_tile);
+
         if (tile_idx < num_tiles - 1)
         {
           consume_tile<false>(tid, tile_idx, tile_base, ITEMS_PER_TILE);
@@ -608,6 +590,7 @@ namespace __merge_sort {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(bool       ping,
                        KeysIt     keys_inout,
                        ItemsIt    items_inout,
@@ -617,18 +600,20 @@ namespace __merge_sort {
                        CompareOp  compare_op,
                        char*      shmem)
     {
-      TempStorage& storage = *reinterpret_cast<TempStorage*>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(ping,
-           storage,
-           core::make_load_iterator(ptx_plan(), keys_inout),
-           core::make_load_iterator(ptx_plan(), items_inout),
-           keys_count,
-           keys_inout,
-           items_inout,
-           keys_out,
-           items_out,
-           compare_op);
+      impl<ActivePtxPlan>{ping,
+                          storage,
+                          core::make_load_iterator(ActivePtxPlan(), keys_inout),
+                          core::make_load_iterator(ActivePtxPlan(),
+                                                   items_inout),
+                          keys_count,
+                          keys_inout,
+                          items_inout,
+                          keys_out,
+                          items_out,
+                          compare_op};
     }
   };    // struct BlockSortAgent
 
@@ -637,16 +622,14 @@ namespace __merge_sort {
             class CompareOp>
   struct PartitionAgent
   {
-    typedef typename iterator_traits<KeysIt>::value_type key_type;
-    template<class Arch>
+    using key_type = typename iterator_traits<KeysIt>::value_type;
     struct PtxPlan : PtxPolicy<256> {};
-
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(bool      ping,
                        KeysIt    keys_ping,
                        key_type* keys_pong,
@@ -700,33 +683,47 @@ namespace __merge_sort {
             class MERGE_ITEMS>
   struct MergeAgent
   {
-    typedef typename iterator_traits<KeysIt>::value_type  key_type;
-    typedef typename iterator_traits<ItemsIt>::value_type item_type;
+    using key_type  = typename iterator_traits<KeysIt>::value_type;
+    using item_type = typename iterator_traits<ItemsIt>::value_type;
 
-    typedef KeysIt     KeysOutputPongIt;
-    typedef ItemsIt    ItemsOutputPongIt;
-    typedef key_type*  KeysOutputPingIt;
-    typedef item_type* ItemsOutputPingIt;
+    using KeysOutputPongIt  = KeysIt;
+    using ItemsOutputPongIt = ItemsIt;
+    using KeysOutputPingIt  = key_type *;
+    using ItemsOutputPingIt = item_type *;
 
-    template<class Arch>
-    struct PtxPlan : Tuning<Arch,key_type>::type
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning600<key_type>,
+                                           Tuning520<key_type>,
+                                           Tuning350<key_type>>;
+
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch,key_type> tuning;
+      using KeysLoadPingIt = typename core::LoadIterator<PtxPlan, KeysIt>::type;
+      using ItemsLoadPingIt =
+        typename core::LoadIterator<PtxPlan, ItemsIt>::type;
+      using KeysLoadPongIt =
+        typename core::LoadIterator<PtxPlan, key_type *>::type;
+      using ItemsLoadPongIt =
+        typename core::LoadIterator<PtxPlan, item_type *>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, KeysIt>::type     KeysLoadPingIt;
-      typedef typename core::LoadIterator<PtxPlan, ItemsIt>::type    ItemsLoadPingIt;
-      typedef typename core::LoadIterator<PtxPlan, key_type*>::type  KeysLoadPongIt;
-      typedef typename core::LoadIterator<PtxPlan, item_type*>::type ItemsLoadPongIt;
+      using BlockLoadKeysPing =
+        typename core::BlockLoad<PtxPlan, KeysLoadPingIt>::type;
+      using BlockLoadItemsPing =
+        typename core::BlockLoad<PtxPlan, ItemsLoadPingIt>::type;
+      using BlockLoadKeysPong =
+        typename core::BlockLoad<PtxPlan, KeysLoadPongIt>::type;
+      using BlockLoadItemsPong =
+        typename core::BlockLoad<PtxPlan, ItemsLoadPongIt>::type;
 
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadPingIt>::type  BlockLoadKeysPing;
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadPingIt>::type BlockLoadItemsPing;
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadPongIt>::type  BlockLoadKeysPong;
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadPongIt>::type BlockLoadItemsPong;
-
-      typedef typename core::BlockStore<PtxPlan, KeysOutputPongIt>::type  BlockStoreKeysPong;
-      typedef typename core::BlockStore<PtxPlan, ItemsOutputPongIt>::type BlockStoreItemsPong;
-      typedef typename core::BlockStore<PtxPlan, KeysOutputPingIt>::type  BlockStoreKeysPing;
-      typedef typename core::BlockStore<PtxPlan, ItemsOutputPingIt>::type BlockStoreItemsPing;
+      using BlockStoreKeysPong =
+        typename core::BlockStore<PtxPlan, KeysOutputPongIt>::type;
+      using BlockStoreItemsPong =
+        typename core::BlockStore<PtxPlan, ItemsOutputPongIt>::type;
+      using BlockStoreKeysPing =
+        typename core::BlockStore<PtxPlan, KeysOutputPingIt>::type;
+      using BlockStoreItemsPing =
+        typename core::BlockStore<PtxPlan, ItemsOutputPingIt>::type;
 
       // gather required temporary storage in a union
       //
@@ -747,34 +744,30 @@ namespace __merge_sort {
       };    // union TempStorage
     };    // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::KeysLoadPingIt  KeysLoadPingIt;
-    typedef typename ptx_plan::ItemsLoadPingIt ItemsLoadPingIt;
-    typedef typename ptx_plan::KeysLoadPongIt  KeysLoadPongIt;
-    typedef typename ptx_plan::ItemsLoadPongIt ItemsLoadPongIt;
-
-    typedef typename ptx_plan::BlockLoadKeysPing  BlockLoadKeysPing;
-    typedef typename ptx_plan::BlockLoadItemsPing BlockLoadItemsPing;
-    typedef typename ptx_plan::BlockLoadKeysPong  BlockLoadKeysPong;
-    typedef typename ptx_plan::BlockLoadItemsPong BlockLoadItemsPong;
-
-    typedef typename ptx_plan::BlockStoreKeysPing  BlockStoreKeysPing;
-    typedef typename ptx_plan::BlockStoreItemsPing BlockStoreItemsPing;
-    typedef typename ptx_plan::BlockStoreKeysPong  BlockStoreKeysPong;
-    typedef typename ptx_plan::BlockStoreItemsPong BlockStoreItemsPong;
-
-    typedef typename ptx_plan::TempStorage     TempStorage;
-
-    enum
-    {
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using KeysLoadPingIt  = typename ActivePtxPlan::KeysLoadPingIt;
+      using ItemsLoadPingIt = typename ActivePtxPlan::ItemsLoadPingIt;
+      using KeysLoadPongIt  = typename ActivePtxPlan::KeysLoadPongIt;
+      using ItemsLoadPongIt = typename ActivePtxPlan::ItemsLoadPongIt;
+
+      using BlockLoadKeysPing  = typename ActivePtxPlan::BlockLoadKeysPing;
+      using BlockLoadItemsPing = typename ActivePtxPlan::BlockLoadItemsPing;
+      using BlockLoadKeysPong  = typename ActivePtxPlan::BlockLoadKeysPong;
+      using BlockLoadItemsPong = typename ActivePtxPlan::BlockLoadItemsPong;
+
+      using BlockStoreKeysPing  = typename ActivePtxPlan::BlockStoreKeysPing;
+      using BlockStoreItemsPing = typename ActivePtxPlan::BlockStoreItemsPing;
+      using BlockStoreKeysPong  = typename ActivePtxPlan::BlockStoreKeysPong;
+      using BlockStoreItemsPong = typename ActivePtxPlan::BlockStoreItemsPong;
+
+      using TempStorage = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
       //---------------------------------------------------------------------
       // Per thread data
       //---------------------------------------------------------------------
@@ -1107,6 +1100,7 @@ namespace __merge_sort {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(bool       ping,
                        KeysIt     keys_ping,
                        ItemsIt    items_ping,
@@ -1118,22 +1112,24 @@ namespace __merge_sort {
                        Size       coop,
                        char*      shmem)
     {
-      TempStorage& storage = *reinterpret_cast<TempStorage*>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(ping,
-           storage,
-           core::make_load_iterator(ptx_plan(), keys_ping),
-           core::make_load_iterator(ptx_plan(), items_ping),
-           core::make_load_iterator(ptx_plan(), keys_pong),
-           core::make_load_iterator(ptx_plan(), items_pong),
-           keys_count,
-           keys_pong,
-           items_pong,
-           keys_ping,
-           items_ping,
-           compare_op,
-           merge_partitions,
-           coop);
+      impl<ActivePtxPlan>{
+        ping,
+        storage,
+        core::make_load_iterator(ActivePtxPlan{}, keys_ping),
+        core::make_load_iterator(ActivePtxPlan{}, items_ping),
+        core::make_load_iterator(ActivePtxPlan{}, keys_pong),
+        core::make_load_iterator(ActivePtxPlan{}, items_pong),
+        keys_count,
+        keys_pong,
+        items_pong,
+        keys_ping,
+        items_ping,
+        compare_op,
+        merge_partitions,
+        coop};
     }
   };    // struct MergeAgent;
 
@@ -1155,57 +1151,54 @@ namespace __merge_sort {
             cudaStream_t stream,
             bool         debug_sync)
   {
-    using core::AgentPlan;
-    using core::get_agent_plan;
-
-    typedef typename iterator_traits<KeysIt>::value_type  key_type;
-    typedef typename iterator_traits<ItemsIt>::value_type item_type;
-
-    typedef core::AgentLauncher<
-        BlockSortAgent<KeysIt,
-                       ItemsIt,
-                       Size,
-                       CompareOp,
-                       SORT_ITEMS,
-                       STABLE> >
-        block_sort_agent;
-
-    typedef core::AgentLauncher<PartitionAgent<KeysIt, Size, CompareOp> >
-        partition_agent;
-
-    typedef core::AgentLauncher<
-        MergeAgent<KeysIt,
-                   ItemsIt,
-                   Size,
-                   CompareOp,
-                   SORT_ITEMS> >
-        merge_agent;
-
     cudaError_t status = cudaSuccess;
 
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
+
     if (keys_count == 0)
+    {
       return status;
+    }
 
-    typename core::get_plan<partition_agent>::type partition_plan =
-        partition_agent::get_plan();
+    using key_type  = typename iterator_traits<KeysIt>::value_type;
+    using item_type = typename iterator_traits<ItemsIt>::value_type;
 
-    typename core::get_plan<merge_agent>::type merge_plan =
-        merge_agent::get_plan(stream);
+    // Declare type aliases for agents, etc:
+    using block_sort_agent_t =
+      BlockSortAgent<KeysIt, ItemsIt, Size, CompareOp, SORT_ITEMS, STABLE>;
+    using partition_agent_t = PartitionAgent<KeysIt, Size, CompareOp>;
+    using merge_agent_t =
+      MergeAgent<KeysIt, ItemsIt, Size, CompareOp, SORT_ITEMS>;
 
-    AgentPlan block_sort_plan = merge_plan;
+    // Create PtxPlans and AgentPlans:
+    const auto partition_ptx_plan = typename partition_agent_t::PtxPlan{};
+    const auto partition_agent_plan = core::AgentPlan{partition_ptx_plan};
 
-    int tile_size = merge_plan.items_per_tile;
-    Size num_tiles = (keys_count + tile_size - 1) / tile_size;
+    const auto merge_agent_plan =
+      core::AgentPlanFromTunings<merge_agent_t>::get();
+    const auto block_sort_agent_plan = merge_agent_plan;
 
-    size_t temp_storage1 = (1 + num_tiles) * sizeof(Size);
-    size_t temp_storage2 = keys_count * sizeof(key_type);
-    size_t temp_storage3 = keys_count * sizeof(item_type) * SORT_ITEMS::value;
-    size_t temp_storage4 = core::vshmem_size(max(block_sort_plan.shared_memory_size,
-                                                 merge_plan.shared_memory_size),
-                                             num_tiles);
+    // Figure out temp_storage_size:
+    const int tile_size = merge_agent_plan.items_per_tile;
+    const Size num_tiles = (keys_count + tile_size - 1) / tile_size;
 
-    void*  allocations[4]      = {NULL, NULL, NULL, NULL};
-    size_t allocation_sizes[4] = {temp_storage1, temp_storage2, temp_storage3, temp_storage4};
+    const std::size_t temp_storage1 = (1 + num_tiles) * sizeof(Size);
+    const std::size_t temp_storage2 = keys_count * sizeof(key_type);
+    const std::size_t temp_storage3 = keys_count * sizeof(item_type) *
+                                      SORT_ITEMS::value;
+    const std::size_t temp_storage4 =
+      core::vshmem_size(max(block_sort_agent_plan.shared_memory_size,
+                            merge_agent_plan.shared_memory_size),
+                        num_tiles);
+
+    void *allocations[4]            = {nullptr, nullptr, nullptr, nullptr};
+    std::size_t allocation_sizes[4] = {temp_storage1,
+                                       temp_storage2,
+                                       temp_storage3,
+                                       temp_storage4};
 
     status = core::alias_storage(d_temp_storage,
                                  temp_storage_bytes,
@@ -1218,50 +1211,76 @@ namespace __merge_sort {
       return status;
     };
 
-    int num_passes = static_cast<int>(thrust::detail::log2_ri(num_tiles));
+    const int num_passes = static_cast<int>(thrust::detail::log2_ri(num_tiles));
     bool ping = !(1 & num_passes);
 
-    Size*      merge_partitions = (Size*)allocations[0];
-    key_type*  keys_buffer      = (key_type*)allocations[1];
-    item_type* items_buffer     = (item_type*)allocations[2];
+    auto *merge_partitions = reinterpret_cast<Size *>(allocations[0]);
+    auto *keys_buffer      = reinterpret_cast<key_type *>(allocations[1]);
+    auto *items_buffer     = reinterpret_cast<item_type *>(allocations[2]);
+    auto *vshmem_ptr       = temp_storage4 > 0
+                               ? reinterpret_cast<char *>(allocations[3])
+                               : nullptr;
 
-    char* vshmem_ptr = temp_storage4 > 0 ? (char*)allocations[3] : NULL;
-
-
-    block_sort_agent(block_sort_plan, keys_count, stream, vshmem_ptr, "block_sort_agent", debug_sync)
-        .launch(ping, keys, items, keys_count, keys_buffer, items_buffer, compare_op);
+    using block_sort_agent_launcher_t = core::AgentLauncher<block_sort_agent_t>;
+    block_sort_agent_launcher_t bsa{block_sort_agent_plan,
+                                    keys_count,
+                                    stream,
+                                    vshmem_ptr,
+                                    "block_sort_agent",
+                                    debug_sync};
+    bsa.launch_ptx_dispatch(typename block_sort_agent_t::Tunings{},
+                            ping,
+                            keys,
+                            items,
+                            keys_count,
+                            keys_buffer,
+                            items_buffer,
+                            compare_op);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    size_t num_partitions = num_tiles + 1;
+    const std::size_t num_partitions = num_tiles + 1;
 
-    partition_agent pa(partition_plan, num_partitions, stream, "partition_agent", debug_sync);
-    merge_agent     ma(merge_plan, keys_count, stream, vshmem_ptr, "merge_agent", debug_sync);
+    using partition_agent_launcher_t = core::AgentLauncher<partition_agent_t>;
+    using merge_agent_launcher_t     = core::AgentLauncher<merge_agent_t>;
+
+    partition_agent_launcher_t pa{partition_agent_plan,
+                                  num_partitions,
+                                  stream,
+                                  "partition_agent",
+                                  debug_sync};
+    merge_agent_launcher_t ma{merge_agent_plan,
+                              keys_count,
+                              stream,
+                              vshmem_ptr,
+                              "merge_agent",
+                              debug_sync};
 
     for (int pass = 0; pass < num_passes; ++pass, ping = !ping)
     {
       Size coop = Size(2) << pass;
 
-      pa.launch(ping,
-                keys,
-                keys_buffer,
-                keys_count,
-                num_partitions,
-                merge_partitions,
-                compare_op,
-                coop,
-                merge_plan.items_per_tile);
+      pa.launch_ptx_plan(partition_ptx_plan,
+                         ping,
+                         keys,
+                         keys_buffer,
+                         keys_count,
+                         num_partitions,
+                         merge_partitions,
+                         compare_op,
+                         coop,
+                         merge_agent_plan.items_per_tile);
       CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-
-      ma.launch(ping,
-                keys,
-                items,
-                keys_count,
-                keys_buffer,
-                items_buffer,
-                compare_op,
-                merge_partitions,
-                coop);
+      ma.launch_ptx_dispatch(typename merge_agent_t::Tunings{},
+                             ping,
+                             keys,
+                             items,
+                             keys_count,
+                             keys_buffer,
+                             items_buffer,
+                             compare_op,
+                             merge_partitions,
+                             coop);
       CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
     }
 

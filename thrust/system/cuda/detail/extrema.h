@@ -37,6 +37,7 @@
 #include <thrust/pair.h>
 #include <thrust/distance.h>
 
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
 namespace thrust
@@ -159,83 +160,97 @@ namespace __extrema {
             cudaStream_t stream,
             bool         debug_sync)
   {
-    using core::AgentPlan;
-    using core::AgentLauncher;
-    using core::get_agent_plan;
-    using core::cuda_optional;
-
-    typedef typename detail::make_unsigned_special<Size>::type UnsignedSize;
-
-    if (num_items == 0)
-      return cudaErrorNotSupported;
-
-    typedef AgentLauncher<
-        __reduce::ReduceAgent<InputIt, OutputIt, T, Size, ReductionOp> >
-        reduce_agent;
-
-    typename reduce_agent::Plan reduce_plan = reduce_agent::get_plan(stream);
-
     cudaError_t status = cudaSuccess;
 
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
 
-    if (num_items <= reduce_plan.items_per_tile)
+    if (num_items == 0)
     {
-      size_t vshmem_size = core::vshmem_size(reduce_plan.shared_memory_size, 1);
+      return status;
+    }
 
-      // small, single tile size
-      if (d_temp_storage == NULL)
+    using UnsignedSize = typename detail::make_unsigned_special<Size>::type;
+
+    using reduce_agent_t =
+      __reduce::ReduceAgent<InputIt, OutputIt, T, Size, ReductionOp>;
+    using reduce_agent_launcher_t = core::AgentLauncher<reduce_agent_t>;
+
+    // Note that ReduceAgent defines a custom AgentPlan type...
+    using reduce_agent_plan_t = typename reduce_agent_t::Plan;
+    auto reduce_agent_plan =
+      core::AgentPlanFromTunings<reduce_agent_t, reduce_agent_plan_t>::get();
+
+    if (num_items <= reduce_agent_plan.items_per_tile)
+    { // small, single tile size
+      const std::size_t vshmem_size =
+        core::vshmem_size(reduce_agent_plan.shared_memory_size, 1);
+
+      if (d_temp_storage == nullptr)
       {
         temp_storage_bytes = max<size_t>(1, vshmem_size);
         return status;
       }
-      char *vshmem_ptr = vshmem_size > 0 ? (char*)d_temp_storage : NULL;
 
-      reduce_agent ra(reduce_plan, num_items, stream, vshmem_ptr, "reduce_agent: single_tile only", debug_sync);
-      ra.launch(input_it, output_it, num_items, reduction_op);
+      char *vshmem_ptr = vshmem_size > 0
+                           ? reinterpret_cast<char *>(d_temp_storage)
+                           : nullptr;
+
+      reduce_agent_launcher_t ra{reduce_agent_plan,
+                                 num_items,
+                                 stream,
+                                 vshmem_ptr,
+                                 "reduce_agent: single_tile only",
+                                 debug_sync};
+      ra.launch_ptx_dispatch(typename reduce_agent_t::Tunings{},
+                             input_it,
+                             output_it,
+                             num_items,
+                             reduction_op);
       CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
     }
     else
-    {
-      // regular size
-      cuda_optional<int> sm_count = core::get_sm_count();
+    { // regular size
+      core::cuda_optional<int> sm_count = core::get_sm_count();
       CUDA_CUB_RET_IF_FAIL(sm_count.status());
 
       // reduction will not use more cta counts than requested
-      cuda_optional<int> max_blocks_per_sm =
-          reduce_agent::
+      core::cuda_optional<int> max_blocks_per_sm =
+          reduce_agent_launcher_t::
               template get_max_blocks_per_sm<InputIt,
                                              OutputIt,
                                              Size,
                                              cub::GridEvenShare<Size>,
                                              cub::GridQueue<UnsignedSize>,
-                                             ReductionOp>(reduce_plan);
+                                             ReductionOp>(reduce_agent_plan);
       CUDA_CUB_RET_IF_FAIL(max_blocks_per_sm.status());
 
+      const int reduce_device_occupancy = max_blocks_per_sm.value() *
+                                          sm_count.value();
 
-
-      int reduce_device_occupancy = (int)max_blocks_per_sm * sm_count;
-
-      int sm_oversubscription = 5;
-      int max_blocks          = reduce_device_occupancy * sm_oversubscription;
+      constexpr int sm_oversubscription = 5;
+      const int max_blocks = reduce_device_occupancy * sm_oversubscription;
 
       cub::GridEvenShare<Size> even_share;
-      even_share.DispatchInit(num_items, max_blocks,
-                              reduce_plan.items_per_tile);
+      even_share.DispatchInit(num_items,
+                              max_blocks,
+                              reduce_agent_plan.items_per_tile);
 
       // we will launch at most "max_blocks" blocks in a grid
       // so preallocate virtual shared memory storage for this if required
       //
-      size_t vshmem_size = core::vshmem_size(reduce_plan.shared_memory_size,
-                                             max_blocks);
+      const std::size_t vshmem_size =
+        core::vshmem_size(reduce_agent_plan.shared_memory_size, max_blocks);
 
       // Temporary storage allocation requirements
-      void * allocations[3] = {NULL, NULL, NULL};
-      size_t allocation_sizes[3] =
-          {
-              max_blocks * sizeof(T),                            // bytes needed for privatized block reductions
-              cub::GridQueue<UnsignedSize>::AllocationSize(),    // bytes needed for grid queue descriptor0
-              vshmem_size                                        // size of virtualized shared memory storage
-          };
+      void * allocations[3]      = {nullptr, nullptr, nullptr};
+      std::size_t allocation_sizes[3] = {
+        max_blocks * sizeof(T), // bytes needed for privatized block reductions
+        cub::GridQueue<UnsignedSize>::AllocationSize(), // bytes needed for grid queue descriptor0
+        vshmem_size // size of virtualized shared memory storage
+      };
       status = cub::AliasTemporaries(d_temp_storage,
                                      temp_storage_bytes,
                                      allocations,
@@ -246,32 +261,42 @@ namespace __extrema {
         return status;
       }
 
-      T *d_block_reductions = (T*) allocations[0];
+      T *d_block_reductions = reinterpret_cast<T *>(allocations[0]);
       cub::GridQueue<UnsignedSize> queue(allocations[1]);
-      char *vshmem_ptr = vshmem_size > 0 ? (char *)allocations[2] : NULL;
-
+      char *vshmem_ptr = vshmem_size > 0
+                           ? reinterpret_cast<char *>(allocations[2])
+                           : nullptr;
 
       // Get grid size for device_reduce_sweep_kernel
       int reduce_grid_size = 0;
-      if (reduce_plan.grid_mapping == cub::GRID_MAPPING_RAKE)
+      if (reduce_agent_plan.grid_mapping == cub::GRID_MAPPING_RAKE)
       {
         // Work is distributed evenly
         reduce_grid_size = even_share.grid_size;
       }
-      else if (reduce_plan.grid_mapping == cub::GRID_MAPPING_DYNAMIC)
+      else if (reduce_agent_plan.grid_mapping == cub::GRID_MAPPING_DYNAMIC)
       {
         // Work is distributed dynamically
-        size_t num_tiles = cub::DivideAndRoundUp(num_items, reduce_plan.items_per_tile);
+        const std::size_t num_tiles =
+          cub::DivideAndRoundUp(num_items, reduce_agent_plan.items_per_tile);
 
         // if not enough to fill the device with threadblocks
         // then fill the device with threadblocks
-        reduce_grid_size = static_cast<int>(min(num_tiles, static_cast<size_t>(reduce_device_occupancy)));
+        reduce_grid_size = static_cast<int>(
+          min(num_tiles, static_cast<size_t>(reduce_device_occupancy)));
 
-        typedef AgentLauncher<__reduce::DrainAgent<Size> > drain_agent;
-        AgentPlan drain_plan = drain_agent::get_plan();
-        drain_plan.grid_size = 1;
-        drain_agent da(drain_plan, stream, "__reduce::drain_agent", debug_sync);
-        da.launch(queue, num_items);
+        using drain_agent_t          = __reduce::DrainAgent<Size>;
+        using drain_agent_launcher_t = core::AgentLauncher<drain_agent_t>;
+
+        const auto drain_ptx_plan   = typename drain_agent_t::PtxPlan{};
+        auto drain_agent_plan = core::AgentPlan{drain_ptx_plan};
+
+        drain_agent_plan.grid_size = 1;
+        drain_agent_launcher_t da{drain_agent_plan,
+                                  stream,
+                                  "__reduce::drain_agent",
+                                  debug_sync};
+        da.launch_ptx_plan(drain_ptx_plan, queue, num_items);
         CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
       }
       else
@@ -279,25 +304,37 @@ namespace __extrema {
         CUDA_CUB_RET_IF_FAIL(cudaErrorNotSupported);
       }
 
-      reduce_plan.grid_size = reduce_grid_size;
-      reduce_agent ra(reduce_plan, stream, vshmem_ptr, "reduce_agent: regular size reduce", debug_sync);
-      ra.launch(input_it,
-                d_block_reductions,
-                num_items,
-                even_share,
-                queue,
-                reduction_op);
+      reduce_agent_plan.grid_size = reduce_grid_size;
+      reduce_agent_launcher_t ra{reduce_agent_plan,
+                                 stream,
+                                 vshmem_ptr,
+                                 "reduce_agent: regular size reduce",
+                                 debug_sync};
+      ra.launch_ptx_dispatch(typename reduce_agent_t::Tunings{},
+                             input_it,
+                             d_block_reductions,
+                             num_items,
+                             even_share,
+                             queue,
+                             reduction_op);
       CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
+      using reduce_single_agent_t =
+        __reduce::ReduceAgent<T *, OutputIt, T, Size, ReductionOp>;
+      using reduce_single_agent_launcher_t =
+        core::AgentLauncher<reduce_single_agent_t>;
 
-      typedef AgentLauncher<
-        __reduce::ReduceAgent<T*, OutputIt, T, Size, ReductionOp> >
-        reduce_agent_single;
-
-      reduce_plan.grid_size = 1;
-      reduce_agent_single ra1(reduce_plan, stream, vshmem_ptr, "reduce_agent: single tile reduce", debug_sync);
-
-      ra1.launch(d_block_reductions, output_it, reduce_grid_size, reduction_op);
+      reduce_agent_plan.grid_size = 1;
+      reduce_single_agent_launcher_t ra1{reduce_agent_plan,
+                                         stream,
+                                         vshmem_ptr,
+                                         "reduce_agent: single tile reduce",
+                                         debug_sync};
+      ra1.launch_ptx_dispatch(typename reduce_single_agent_t::Tunings{},
+                              d_block_reductions,
+                              output_it,
+                              reduce_grid_size,
+                              reduction_op);
       CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
     }
 

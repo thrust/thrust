@@ -42,6 +42,7 @@
 #include <thrust/detail/minmax.h>
 #include <thrust/distance.h>
 
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
 namespace thrust
@@ -83,97 +84,58 @@ namespace __unique {
             cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS    = _BLOCK_THREADS,
-      ITEMS_PER_THREAD = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = _BLOCK_THREADS * _ITEMS_PER_THREAD,
-    };
-    static const cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
-    static const cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
-  };    // struct PtxPolicy
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE   = _BLOCK_THREADS * _ITEMS_PER_THREAD;
 
-  template<class,class>
-  struct Tuning;
+    static constexpr cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
+    static constexpr cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+  };    // struct PtxPolicy
 
   namespace mpl = thrust::detail::mpl::math;
 
-  template<class T, size_t NOMINAL_4B_ITEMS_PER_THREAD>
+  template <typename T, std::size_t NOMINAL_4B_ITEMS_PER_THREAD>
   struct items_per_thread
   {
-    enum
-    {
-      value = mpl::min<
-          int,
-          NOMINAL_4B_ITEMS_PER_THREAD,
-          mpl::max<int,
-                   1,
-                   (NOMINAL_4B_ITEMS_PER_THREAD * 4 /
-                    sizeof(T))>::value>::value
-    };
+    static constexpr int
+      value = mpl::min<int,
+                       NOMINAL_4B_ITEMS_PER_THREAD,
+                       mpl::max<int,
+                                1,
+                                (NOMINAL_4B_ITEMS_PER_THREAD * 4 /
+                                 static_cast<int>(sizeof(T)))>::value>::value;
   };
 
-  template<class T>
-  struct Tuning<sm52,T>
+  template <typename T>
+  struct Tuning520 : cub::detail::ptx_base<520>
   {
-    const static int INPUT_SIZE = sizeof(T);
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 11,
-      //
-      ITEMS_PER_THREAD = items_per_thread<T,
-                                          NOMINAL_4B_ITEMS_PER_THREAD>::value
-    };
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 11;
+    static constexpr int ITEMS_PER_THREAD =
+      items_per_thread<T, NOMINAL_4B_ITEMS_PER_THREAD>::value;
 
-    typedef PtxPolicy<64,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning for sm52
+    using Policy = PtxPolicy<64,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning520
 
-
-  template <class T>
-  struct Tuning<sm35, T>
+  template <typename T>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    const static int INPUT_SIZE = sizeof(T);
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 9,
-      //
-      ITEMS_PER_THREAD = items_per_thread<T,
-                                          NOMINAL_4B_ITEMS_PER_THREAD>::value
-    };
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 9;
+    static constexpr int ITEMS_PER_THREAD =
+      items_per_thread<T, NOMINAL_4B_ITEMS_PER_THREAD>::value;
 
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning for sm35
-
-  template<class T>
-  struct Tuning<sm30,T>
-  {
-    const static int INPUT_SIZE = sizeof(T);
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      //
-      ITEMS_PER_THREAD = items_per_thread<T,
-                                          NOMINAL_4B_ITEMS_PER_THREAD>::value
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning for sm30
+    using Policy = PtxPolicy<128,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning350
 
   template <class ItemsIt,
             class ItemsOutputIt,
@@ -186,37 +148,37 @@ namespace __unique {
 
     typedef cub::ScanTileState<Size> ScanTileState;
 
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, item_type>::type
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning520<item_type>,
+                                           Tuning350<item_type>>;
+
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch, item_type> tuning;
+      using ItemsLoadIt = typename core::LoadIterator<PtxPlan, ItemsIt>::type;
+      using BlockLoadItems =
+        typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, ItemsIt>::type ItemsLoadIt;
+      using BlockDiscontinuityItems =
+        cub::BlockDiscontinuity<item_type,
+                                PtxPlan::BLOCK_THREADS,
+                                1,
+                                1,
+                                Tuning::ptx_arch>;
 
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type BlockLoadItems;
+      using TilePrefixCallback = cub::TilePrefixCallbackOp<Size,
+                                                           cub::Sum,
+                                                           ScanTileState,
+                                                           Tuning::ptx_arch>;
+      using BlockScan = cub::BlockScan<Size,
+                                       PtxPlan::BLOCK_THREADS,
+                                       PtxPlan::SCAN_ALGORITHM,
+                                       1,
+                                       1,
+                                       Tuning::ptx_arch>;
 
-      typedef cub::BlockDiscontinuity<item_type,
-                                      PtxPlan::BLOCK_THREADS,
-                                      1,
-                                      1,
-                                      Arch::ver>
-          BlockDiscontinuityItems;
-
-      typedef cub::TilePrefixCallbackOp<Size,
-                                        cub::Sum,
-                                        ScanTileState,
-                                        Arch::ver>
-          TilePrefixCallback;
-      typedef cub::BlockScan<Size,
-                             PtxPlan::BLOCK_THREADS,
-                             PtxPlan::SCAN_ALGORITHM,
-                             1,
-                             1,
-                             Arch::ver>
-          BlockScan;
-
-      typedef core::uninitialized_array<item_type, PtxPlan::ITEMS_PER_TILE>
-          shared_items_t;
+      using shared_items_t =
+        core::uninitialized_array<item_type, PtxPlan::ITEMS_PER_TILE>;
 
       union TempStorage
       {
@@ -233,25 +195,22 @@ namespace __unique {
       };    // union TempStorage
     };      // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::ItemsLoadIt             ItemsLoadIt;
-    typedef typename ptx_plan::BlockLoadItems          BlockLoadItems;
-    typedef typename ptx_plan::BlockDiscontinuityItems BlockDiscontinuityItems;
-    typedef typename ptx_plan::TilePrefixCallback      TilePrefixCallback;
-    typedef typename ptx_plan::BlockScan               BlockScan;
-    typedef typename ptx_plan::shared_items_t          shared_items_t;
-    typedef typename ptx_plan::TempStorage             TempStorage;
-
-    enum
-    {
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using ItemsLoadIt        = typename ActivePtxPlan::ItemsLoadIt;
+      using BlockLoadItems     = typename ActivePtxPlan::BlockLoadItems;
+      using TilePrefixCallback = typename ActivePtxPlan::TilePrefixCallback;
+      using BlockScan          = typename ActivePtxPlan::BlockScan;
+      using shared_items_t     = typename ActivePtxPlan::shared_items_t;
+      using TempStorage        = typename ActivePtxPlan::TempStorage;
+      using BlockDiscontinuityItems =
+        typename ActivePtxPlan::BlockDiscontinuityItems;
+
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
       //---------------------------------------------------------------------
       // Per-thread fields
       //---------------------------------------------------------------------
@@ -493,6 +452,7 @@ namespace __unique {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(ItemsIt          items_in,
                        ItemsOutputIt    items_out,
                        BinaryPred       binary_pred,
@@ -502,16 +462,17 @@ namespace __unique {
                        int              num_tiles,
                        char *           shmem)
     {
-      TempStorage &storage = *reinterpret_cast<TempStorage *>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(storage,
-           tile_state,
-           core::make_load_iterator(ptx_plan(), items_in),
-           items_out,
-           binary_pred,
-           num_items,
-           num_tiles,
-           num_selected_out);
+      impl<ActivePtxPlan>{storage,
+                          tile_state,
+                          core::make_load_iterator(ActivePtxPlan{}, items_in),
+                          items_out,
+                          binary_pred,
+                          num_items,
+                          num_tiles,
+                          num_selected_out};
     }
   };    // struct UniqueAgent
 
@@ -520,14 +481,13 @@ namespace __unique {
             class Size>
   struct InitAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<128> {};
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(ScanTileState tile_state,
                        Size          num_tiles,
                        NumSelectedIt num_selected_out,
@@ -556,42 +516,47 @@ namespace __unique {
             cudaStream_t     stream,
             bool             debug_sync)
   {
-    using core::AgentLauncher;
-    using core::AgentPlan;
-    using core::get_agent_plan;
-
-    typedef AgentLauncher<
-        UniqueAgent<ItemsInputIt,
-                    ItemsOutputIt,
-                    BinaryPred,
-                    Size,
-                    NumSelectedOutIt> >
-        unique_agent;
-
-    typedef typename unique_agent::ScanTileState ScanTileState;
-
-    typedef AgentLauncher<
-        InitAgent<ScanTileState, NumSelectedOutIt, Size> >
-        init_agent;
-
-    using core::get_plan;
-    typename get_plan<init_agent>::type   init_plan   = init_agent::get_plan();
-    typename get_plan<unique_agent>::type unique_plan = unique_agent::get_plan(stream);
-
-
-    int tile_size = unique_plan.items_per_tile;
-    size_t num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
-
-    size_t vshmem_size = core::vshmem_size(unique_plan.shared_memory_size,
-                                           num_tiles);
-
     cudaError_t status = cudaSuccess;
-    size_t      allocation_sizes[2] = {0, vshmem_size};
-    status = ScanTileState::AllocationSize(static_cast<int>(num_tiles), allocation_sizes[0]);
+
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
+
+    if (num_items == 0)
+    {
+      return status;
+    }
+
+    // Declare type aliases for agents, etc:
+    using unique_agent_t = UniqueAgent<ItemsInputIt,
+                                       ItemsOutputIt,
+                                       BinaryPred,
+                                       Size,
+                                       NumSelectedOutIt>;
+    using scan_tile_state_t = typename unique_agent_t::ScanTileState;
+    using init_agent_t = InitAgent<scan_tile_state_t, NumSelectedOutIt, Size>;
+
+    // Create PtxPlans and AgentPlans:
+    const auto init_ptx_plan = typename init_agent_t::PtxPlan{};
+    const auto init_agent_plan = core::AgentPlan{init_ptx_plan};
+
+    const auto unique_agent_plan =
+      core::AgentPlanFromTunings<unique_agent_t>::get();
+
+    // Figure out temp_storage_size:
+    const int         tile_size = unique_agent_plan.items_per_tile;
+    const std::size_t num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+
+    const std::size_t vshmem_size =
+      core::vshmem_size(unique_agent_plan.shared_memory_size, num_tiles);
+
+    std::size_t allocation_sizes[2] = {0, vshmem_size};
+    status = scan_tile_state_t::AllocationSize(static_cast<int>(num_tiles),
+                                               allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    void *allocations[2] = {NULL, NULL};
-    //
+    void *allocations[2] = {nullptr, nullptr};
     status = cub::AliasTemporaries(d_temp_storage,
                                    temp_storage_bytes,
                                    allocations,
@@ -603,28 +568,42 @@ namespace __unique {
       return status;
     }
 
-    ScanTileState tile_status;
-    status =  tile_status.Init(static_cast<int>(num_tiles), allocations[0], allocation_sizes[0]);
+    scan_tile_state_t tile_status;
+    status = tile_status.Init(static_cast<int>(num_tiles),
+                              allocations[0],
+                              allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    num_tiles = max<size_t>(1,num_tiles);
-    init_agent ia(init_plan, num_tiles, stream, "unique_by_key::init_agent", debug_sync);
-    ia.launch(tile_status, num_tiles, num_selected_out);
+    using init_agent_launcher_t = core::AgentLauncher<init_agent_t>;
+    init_agent_launcher_t ia{init_agent_plan,
+                             num_tiles,
+                             stream,
+                             "unique_by_key::init_agent",
+                             debug_sync};
+    ia.launch_ptx_plan(init_ptx_plan, tile_status, num_tiles, num_selected_out);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    if (num_items == 0) { return status; }
+    char *vshmem_ptr = vshmem_size > 0
+                         ? reinterpret_cast<char *>(allocations[1])
+                         : nullptr;
 
-    char *vshmem_ptr = vshmem_size > 0 ? (char *)allocations[1] : NULL;
-
-    unique_agent ua(unique_plan, num_items, stream, vshmem_ptr, "unique_by_key::unique_agent", debug_sync);
-    ua.launch(items_in,
-              items_out,
-              binary_pred,
-              num_selected_out,
-              num_items,
-              tile_status,
-              num_tiles);
+    using unique_agent_launcher_t = core::AgentLauncher<unique_agent_t>;
+    unique_agent_launcher_t ua{unique_agent_plan,
+                               num_items,
+                               stream,
+                               vshmem_ptr,
+                               "unique_by_key::unique_agent",
+                               debug_sync};
+    ua.launch_ptx_dispatch(typename unique_agent_t::Tunings{},
+                           items_in,
+                           items_out,
+                           binary_pred,
+                           num_selected_out,
+                           num_items,
+                           tile_status,
+                           num_tiles);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
+
     return status;
   }
 

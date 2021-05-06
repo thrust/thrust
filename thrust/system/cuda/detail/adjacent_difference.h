@@ -33,8 +33,6 @@
 #include <thrust/detail/cstdint.h>
 #include <thrust/detail/temporary_array.h>
 #include <thrust/system/cuda/detail/util.h>
-#include <cub/device/device_select.cuh>
-#include <cub/block/block_adjacent_difference.cuh>
 #include <thrust/system/cuda/detail/core/agent_launcher.h>
 #include <thrust/system/cuda/detail/par_to_seq.h>
 #include <thrust/system/cuda/detail/dispatch.h>
@@ -43,6 +41,9 @@
 #include <thrust/detail/mpl/math.h>
 #include <thrust/detail/minmax.h>
 
+#include <cub/block/block_adjacent_difference.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+#include <cub/device/device_select.cuh>
 #include <cub/util_math.cuh>
 
 namespace thrust
@@ -70,71 +71,42 @@ namespace __adjacent_difference {
             cub::BlockStoreAlgorithm _STORE_ALGORITHM  = cub::BLOCK_STORE_DIRECT>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS    = _BLOCK_THREADS,
-      ITEMS_PER_THREAD = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD
-    };
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    static const cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
+    static constexpr cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static constexpr cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
   };
 
   template<int INPUT_SIZE, int NOMINAL_4B_ITEMS_PER_THREAD>
   struct items_per_thread
   {
-    enum
-    {
-      value = (INPUT_SIZE <= 8)
-                  ? NOMINAL_4B_ITEMS_PER_THREAD
-                  : mpl::min<
-                        int,
-                        NOMINAL_4B_ITEMS_PER_THREAD,
-                        mpl::max<int,
-                                 1,
-                                 ((NOMINAL_4B_ITEMS_PER_THREAD * 8) +
-                                  INPUT_SIZE - 1) /
-                                     INPUT_SIZE>::value>::value
-    };
+    static constexpr int value =
+      (INPUT_SIZE <= 8)
+        ? NOMINAL_4B_ITEMS_PER_THREAD
+        : mpl::min<int,
+                   NOMINAL_4B_ITEMS_PER_THREAD,
+                   mpl::max<int,
+                            1,
+                            ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + INPUT_SIZE - 1) /
+                              INPUT_SIZE>::value>::value;
   };
 
-  template<class Arch, class T>
-  struct Tuning;
+  template <class T>
+  struct Tuning350 : cub::detail::ptx_base<350>
+  {
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 7;
+    static constexpr int ITEMS_PER_THREAD =
+      items_per_thread<INPUT_SIZE, NOMINAL_4B_ITEMS_PER_THREAD>::value;
 
-  template <class T>
-  struct Tuning<sm30, T>
-  {
-    enum
-    {
-      INPUT_SIZE                  = sizeof(T),
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = items_per_thread<INPUT_SIZE,
-                                          NOMINAL_4B_ITEMS_PER_THREAD>::value
-    };
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };
-  template <class T>
-  struct Tuning<sm35, T> : Tuning<sm30,T>
-  {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = items_per_thread<Tuning::INPUT_SIZE,
-                                          NOMINAL_4B_ITEMS_PER_THREAD>::value
-    };
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
+    using Policy = PtxPolicy<128,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
   template <class InputIt,
@@ -148,11 +120,12 @@ namespace __adjacent_difference {
     // XXX output type must be result of BinaryOp(input_type,input_type);
     typedef input_type output_type;
 
-    template<class Arch>
-    struct PtxPlan : Tuning<Arch,input_type>::type
-    {
-      typedef Tuning<Arch,input_type> tuning;
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning350<input_type>>;
 
+    template<class Tuning>
+    struct PtxPlan : Tuning::Policy
+    {
       typedef typename core::LoadIterator<PtxPlan, InputIt>::type LoadIt;
       typedef typename core::BlockLoad<PtxPlan, LoadIt>::type     BlockLoad;
 
@@ -163,7 +136,7 @@ namespace __adjacent_difference {
                                            PtxPlan::BLOCK_THREADS,
                                            1,
                                            1,
-                                           Arch::ver>
+                                           Tuning::ptx_arch>
           BlockAdjacentDifference;
 
       union TempStorage
@@ -174,24 +147,18 @@ namespace __adjacent_difference {
       }; // union TempStorage
     }; // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::LoadIt      LoadIt;
-    typedef typename ptx_plan::BlockLoad   BlockLoad;
-    typedef typename ptx_plan::BlockStore  BlockStore;
-    typedef typename ptx_plan::BlockAdjacentDifference BlockAdjacentDifference;
-    typedef typename ptx_plan::TempStorage TempStorage;
-
-
-    enum
-    {
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE,
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using BlockAdjacentDifference =
+        typename ActivePtxPlan::BlockAdjacentDifference;
+      using BlockLoad   = typename ActivePtxPlan::BlockLoad;
+      using BlockStore  = typename ActivePtxPlan::BlockStore;
+      using LoadIt      = typename ActivePtxPlan::LoadIt;
+      using TempStorage = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
 
       //---------------------------------------------------------------------
       // Per-thread fields
@@ -308,7 +275,7 @@ namespace __adjacent_difference {
            BinaryOp     binary_op_,
            Size         num_items)
           : temp_storage(temp_storage_),
-            load_it(core::make_load_iterator(ptx_plan(), input_it_)),
+            load_it(core::make_load_iterator(ActivePtxPlan{}, input_it_)),
             first_tile_previous(first_tile_previous_),
             output_it(result_),
             binary_op(binary_op_)
@@ -321,6 +288,7 @@ namespace __adjacent_difference {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(InputIt     first,
                        input_type *first_element,
                        OutputIt    result,
@@ -328,8 +296,11 @@ namespace __adjacent_difference {
                        Size        num_items,
                        char *      shmem)
     {
-      TempStorage &storage = *reinterpret_cast<TempStorage *>(shmem);
-      impl(storage, first, first_element, result, binary_op, num_items);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage = *reinterpret_cast<temp_storage_t *>(shmem);
+
+      using impl_t = impl<ActivePtxPlan>;
+      impl_t{storage, first, first_element, result, binary_op, num_items};
     }
   }; // struct AdjacentDifferenceAgent
 
@@ -338,14 +309,13 @@ namespace __adjacent_difference {
             class Size>
   struct InitAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<128> {};
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(InputIt  first,
                        OutputIt result,
                        Size     num_tiles,
@@ -373,37 +343,42 @@ namespace __adjacent_difference {
             cudaStream_t stream,
             bool         debug_sync)
   {
-    if (num_items == 0)
-      return cudaSuccess;
-
-    using core::AgentPlan;
-    using core::AgentLauncher;
-
     cudaError_t status = cudaSuccess;
 
-    typedef AgentLauncher<
-        AdjacentDifferenceAgent<InputIt,
-                                OutputIt,
-                                Size,
-                                BinaryOp> >
-        difference_agent;
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
 
-    typedef typename iterator_traits<InputIt>::value_type input_type;
-    typedef AgentLauncher<InitAgent<InputIt, input_type *, Size> > init_agent;
+    if (num_items == 0)
+    {
+      return status;
+    }
 
-    AgentPlan difference_plan = difference_agent::get_plan(stream);
-    AgentPlan init_plan       = init_agent::get_plan();
+    // Declare type aliases for agents, etc:
+    using adj_diff_agent_t =
+      AdjacentDifferenceAgent<InputIt, OutputIt, Size, BinaryOp>;
 
+    using input_t = typename iterator_traits<InputIt>::value_type;
+    using init_agent_t = InitAgent<InputIt, input_t *, Size>;
 
-    Size tile_size = difference_plan.items_per_tile;
-    Size num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+    // Create PtxPlans and AgentPlans:
+    const auto init_ptx_plan = typename init_agent_t::PtxPlan{};
+    const thrust::cuda_cub::core::AgentPlan init_agent_plan{init_ptx_plan};
 
-    size_t tmp1        = num_tiles * sizeof(input_type);
-    size_t vshmem_size = core::vshmem_size(difference_plan.shared_memory_size,
-                                           num_tiles);
+    const auto adj_diff_agent_plan =
+      core::AgentPlanFromTunings<adj_diff_agent_t>::get();
 
-    size_t allocation_sizes[2] = {tmp1, vshmem_size};
-    void * allocations[2]      = {NULL, NULL};
+    // Work out shmem requirements:
+    const Size tile_size = adj_diff_agent_plan.items_per_tile;
+    const Size num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+
+    const std::size_t tmp1 = num_tiles * sizeof(input_t);
+    const std::size_t vshmem_size =
+      core::vshmem_size(adj_diff_agent_plan.shared_memory_size, num_tiles);
+
+    std::size_t allocation_sizes[2] = {tmp1, vshmem_size};
+    void *allocations[2]            = {nullptr, nullptr};
 
     status = core::alias_storage(d_temp_storage,
                                  temp_storage_bytes,
@@ -411,25 +386,46 @@ namespace __adjacent_difference {
                                  allocation_sizes);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    if (d_temp_storage == NULL)
+    if (d_temp_storage == nullptr)
     {
       return status;
     }
 
-    input_type *first_tile_previous = (input_type *)allocations[0];
-    char *vshmem_ptr = vshmem_size > 0 ? (char *)allocations[1] : NULL;
+    input_t *first_tile_previous = reinterpret_cast<input_t *>(allocations[0]);
+    char *vshmem_ptr = vshmem_size > 0
+                         ? reinterpret_cast<char *>(allocations[1])
+                         : nullptr;
 
-    init_agent ia(init_plan, num_tiles, stream, "adjacent_difference::init_agent", debug_sync);
-    ia.launch(first, first_tile_previous, num_tiles, tile_size);
+    // Launch init kernel:
+    using init_agent_launcher_t = core::AgentLauncher<init_agent_t>;
+    init_agent_launcher_t ia{init_agent_plan,
+                             num_tiles,
+                             stream,
+                             "adjacent_difference::init_agent",
+                             debug_sync};
+    ia.launch_ptx_plan(init_ptx_plan,
+                       first,
+                       first_tile_previous,
+                       num_tiles,
+                       tile_size);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    difference_agent da(difference_plan, num_items, stream, vshmem_ptr, "adjacent_difference::difference_agent", debug_sync);
-    da.launch(first,
-              first_tile_previous,
-              result,
-              binary_op,
-              num_items);
+    // Launch adjacent difference kernel:
+    using adj_diff_agent_launcher_t = core::AgentLauncher<adj_diff_agent_t>;
+    adj_diff_agent_launcher_t da{adj_diff_agent_plan,
+                                 num_items,
+                                 stream,
+                                 vshmem_ptr,
+                                 "adjacent_difference::difference_agent",
+                                 debug_sync};
+    da.launch_ptx_dispatch(typename adj_diff_agent_t::Tunings{},
+                           first,
+                           first_tile_previous,
+                           result,
+                           binary_op,
+                           num_items);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
+
     return status;
   }
 

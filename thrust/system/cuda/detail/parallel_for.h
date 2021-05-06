@@ -36,6 +36,8 @@
 #include <thrust/system/cuda/detail/core/agent_launcher.h>
 #include <thrust/system/cuda/detail/par_to_seq.h>
 
+#include <cub/detail/ptx_dispatch.cuh>
+
 namespace thrust
 {
 
@@ -43,65 +45,58 @@ namespace cuda_cub {
 
 namespace __parallel_for {
 
-  template <int _BLOCK_THREADS,
-            int _ITEMS_PER_THREAD = 1>
+  template <int _BLOCK_THREADS, int _ITEMS_PER_THREAD = 1>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS    = _BLOCK_THREADS,
-      ITEMS_PER_THREAD = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD,
-    };
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD;
   };    // struct PtxPolicy
 
-  template <class Arch, class F>
-  struct Tuning;
-
-  template <class F>
-  struct Tuning<sm30, F>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    typedef PtxPolicy<256, 2> type;
+    using Policy = PtxPolicy<256, 2>;
   };
 
-
-  template <class F,
-            class Size>
+  template <class F, class Size>
   struct ParallelForAgent
   {
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, F>::type
-    {
-      typedef Tuning<Arch, F> tuning;
-    };
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
+    // List in reverse order:
+    using Tunings = cub::detail::type_list<Tuning350>;
 
-    enum
-    {
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS
-    };
+    // Required for the AgentLauncher machinery; Tunings provide parameters,
+    // the PtxPlan defines subalgorithms, temp_storage, etc.
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
+    {};
 
-    template <bool IS_FULL_TILE>
-    static void    THRUST_DEVICE_FUNCTION
-    consume_tile(F    f,
-                 Size tile_base,
-                 int  items_in_tile)
+    template <typename ActivePtxPlan>
+    struct impl
     {
-#pragma unroll
-      for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+
+      template <bool IS_FULL_TILE>
+      THRUST_DEVICE_FUNCTION
+      static void consume_tile(F f, Size tile_base, int items_in_tile)
       {
-        Size idx = BLOCK_THREADS * ITEM + threadIdx.x;
-        if (IS_FULL_TILE || idx < items_in_tile)
-          f(tile_base + idx);
+#pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+          Size idx = BLOCK_THREADS * ITEM + threadIdx.x;
+          if (IS_FULL_TILE || idx < items_in_tile)
+            f(tile_base + idx);
+        }
       }
-    }
+    }; // end impl
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(F     f,
                        Size  num_items,
                        char * /*shmem*/ )
     {
+      constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
       Size tile_base     = static_cast<Size>(blockIdx.x) * ITEMS_PER_TILE;
       Size num_remaining = num_items - tile_base;
       Size items_in_tile = static_cast<Size>(
@@ -110,35 +105,45 @@ namespace __parallel_for {
       if (items_in_tile == ITEMS_PER_TILE)
       {
         // full tile
-        consume_tile<true>(f, tile_base, ITEMS_PER_TILE);
+        impl<ActivePtxPlan>::consume_tile<true>(f, tile_base, ITEMS_PER_TILE);
       }
       else
       {
         // partial tile
-        consume_tile<false>(f, tile_base, items_in_tile);
+        impl<ActivePtxPlan>::consume_tile<false>(f, tile_base, items_in_tile);
       }
     }
-  };    // struct ParallelForEagent
+  };    // struct ParallelForAgent
 
-  template <class F,
-            class Size>
-  THRUST_RUNTIME_FUNCTION cudaError_t
-  parallel_for(Size         num_items,
-               F            f,
-               cudaStream_t stream)
+  template <typename F, typename Size>
+  THRUST_RUNTIME_FUNCTION
+  cudaError_t parallel_for(Size num_items, F f, cudaStream_t stream)
   {
     if (num_items == 0)
+    {
       return cudaSuccess;
-    using core::AgentLauncher;
-    using core::AgentPlan;
+    }
 
-    bool debug_sync = THRUST_DEBUG_SYNC_FLAG;
+    constexpr bool debug_sync = THRUST_DEBUG_SYNC_FLAG;
 
-    typedef AgentLauncher<ParallelForAgent<F, Size> > parallel_for_agent;
-    AgentPlan parallel_for_plan = parallel_for_agent::get_plan(stream);
+    // Create AgentPlan
+    using parallel_for_agent_t = ParallelForAgent<F, Size>;
+    const auto parallel_for_agent_plan =
+      core::AgentPlanFromTunings<parallel_for_agent_t>::get();
 
-    parallel_for_agent pfa(parallel_for_plan, num_items, stream, "transform::agent", debug_sync);
-    pfa.launch(f, num_items);
+    // Create and launch agent:
+    using parallel_for_agent_launcher_t = core::AgentLauncher<parallel_for_agent_t>;
+    parallel_for_agent_launcher_t pfa(parallel_for_agent_plan,
+                                      num_items,
+                                      stream,
+                                      "parallel_for::agent",
+                                      debug_sync);
+
+    using parallel_for_tunings_t = typename parallel_for_agent_t::Tunings;
+    pfa.launch_ptx_dispatch(parallel_for_tunings_t{},
+                            // Args to Agent::entry:
+                            f,
+                            num_items);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
     return cudaSuccess;
