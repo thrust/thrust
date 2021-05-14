@@ -1,33 +1,51 @@
 <code class="doxybook">
 {%- if exists("includes") -%}
-  <span>#include {{includes}}</span>{#- -#}
+  <span>#include {{includes}}</span>{{- noop() -}}
   <br>
 {%- endif -%}
 {%- include "synopsis_template_parameters.tmpl" -%}
 <span>{%- include "synopsis_kind_abbreviated.tmpl" -%}{{name}} {</span>
-{%- if exists("publicClasses") or exists("publicTypes") or exists("publicAttributes") or exists("publicFunctions") -%}
-<span>public:</span>
+{%- if exists("publicClasses") or exists("publicTypes") or exists("publicAttributes") or exists("publicFunctions") or exists("friends") -%}
+  <span>public:</span>{{- noop() -}}
+  <span class="doxybook-indent2">
 {%- endif -%}
-<span class="doxybook-indent2">
 {%- if exists("publicClasses") -%}
   {%- for child in publicClasses -%}
-    <br>{#- -#}
+    <br>
     {{- render("synopsis_brief.tmpl", child) -}}
+    {#- The Doxygen metadata that a parent has on its nested   -#}{{- noop() -}}
+    {#- classes doesn't include their template parameters.     -#}{{- noop() -}}
+    {#- Fortunately, we have the refid of the nested class, so -#}{{- noop() -}}
+    {#- so we can just load the data from their page.          -#}{{- noop() -}}
     {{- render("synopsis_template_parameters.tmpl", load(child.refid)) -}}
     <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{stripNamespace(child.name)}}</a></b>;</span>
   {%- endfor -%}
 {%- endif -%}
 {%- if exists("publicTypes") -%}
   {%- for child in publicTypes -%}
-    <br>{#- -#}
+    <br>
     {{- render("synopsis_brief.tmpl", child) -}}
     {{- render("synopsis_template_parameters.tmpl", child) -}}
     <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
   {%- endfor -%}
 {%- endif -%}
+{%- if exists("friends") -%}
+  {%- for child in friends -%}
+    {%- if child.type == "class" or child.type == "struct" -%}
+      <br>
+      {{- render("synopsis_brief.tmpl", child) -}}
+      {{- render("synopsis_template_parameters.tmpl", child) -}}
+      {#- Unfortunately, the refid and URL for a friend class  -#}{{- noop() -}}
+      {#- incorrectly refers to a definition on the local      -#}{{- noop() -}}
+      {#- page, instead of the friend class's own page.        -#}{{- noop() -}}
+      {#- So we don't link to friend classes.                  -#}{{- noop() -}}
+      <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b>{{child.name}}</b>;</span>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
 {%- if exists("publicAttributes") -%}
   {%- for child in publicAttributes -%}
-    <br>{#- -#}
+    <br>
     {{- render("synopsis_brief.tmpl", child) -}}
     {{- render("synopsis_template_parameters.tmpl", child) -}}
     <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
@@ -35,13 +53,74 @@
 {%- endif -%}
 {%- if exists("publicFunctions") -%}
   {%- for child in publicFunctions -%}
-    <br>{#- -#}
+    <br>
     {{- render("synopsis_brief.tmpl", child) -}}
     {{- render("synopsis_template_parameters.tmpl", child) -}}
-    <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{#- -#}
+    {{- render("synopsis_function_type_and_leading_specifiers.tmpl", child) -}}
     <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
   {%- endfor -%}
 {%- endif -%}
-</span>
+{%- if exists("friends") -%}
+  {%- for child in friends -%}
+    {%- if child.type != "class" and child.type != "struct" -%}
+      <br>
+      {{- render("synopsis_brief.tmpl", child) -}}
+      {{- render("synopsis_template_parameters.tmpl", child) -}}
+      {#- Unfortunately, the refid and URL for a friend class  -#}{{- noop() -}}
+      {#- incorrectly refers to a definition on the local      -#}{{- noop() -}}
+      {#- page, instead of the friend class's own page.        -#}{{- noop() -}}
+      {#- So we don't link to friend classes.                  -#}{{- noop() -}}
+      <span>friend {{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{{- noop() -}}
+      <span><b>{{child.name}}</b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("publicClasses") or exists("publicTypes") or exists("publicAttributes") or exists("publicFunctions") or exists("friends") -%}
+  </span>
+  {%- if exists("protectedClasses") or exists("protectedTypes") or exists("protectedAttributes") or exists("protectedFunctions") -%}
+    <br>
+  {%- endif -%}
+{%- endif -%}
+{%- if exists("protectedClasses") or exists("protectedTypes") or exists("protectedAttributes") or exists("protectedFunctions") -%}
+  <span>protected:</span>{{- noop() -}}
+  <span class="doxybook-indent2">
+{%- endif -%}
+{%- if exists("protectedClasses") -%}
+  {%- for child in protectedClasses -%}
+    <br>
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {{- render("synopsis_template_parameters.tmpl", load(child.refid)) -}}
+    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{stripNamespace(child.name)}}</a></b>;</span>
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("protectedTypes") -%}
+  {%- for child in protectedTypes -%}
+    <br>
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {{- render("synopsis_template_parameters.tmpl", child) -}}
+    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("protectedAttributes") -%}
+  {%- for child in protectedAttributes -%}
+    <br>
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {{- render("synopsis_template_parameters.tmpl", child) -}}
+    <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("protectedFunctions") -%}
+  {%- for child in protectedFunctions -%}
+    <br>
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {{- render("synopsis_template_parameters.tmpl", child) -}}
+    {{- render("synopsis_function_type_and_leading_specifiers.tmpl", child) -}}
+    <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("protectedClasses") or exists("protectedTypes") or exists("protectedAttributes") or exists("protectedFunctions") -%}
+  </span>
+{%- endif -%}
 <span>};</span>
 </code>
+

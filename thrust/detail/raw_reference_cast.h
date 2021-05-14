@@ -111,7 +111,7 @@ template<typename T>
 
 
 template<typename T>
-  struct raw_reference : 
+  struct raw_reference :
     raw_reference_detail::raw_reference_impl<T>
 {};
 

@@ -1,4 +1,3 @@
-
 {% for child0 in children %}* **{{child0.kind}} [{{child0.title}}]({{child0.url}})** {% if existsIn(child0, "brief") %}<br>{{child0.brief}}{% endif %}{% if existsIn(child0, "children") %}{% for child1 in child0.children %}
     * **{{child1.kind}} [{{last(stripNamespace(child1.title))}}]({{child1.url}})** {% if existsIn(child1, "brief") %}<br>{{child1.brief}}{% endif %}{% if existsIn(child1, "children") %}{% for child2 in child1.children %}
         * **{{child2.kind}} [{{last(stripNamespace(child2.title))}}]({{child2.url}})** {% if existsIn(child2, "brief") %}<br>{{child2.brief}}{% endif %}{% if existsIn(child2, "children") %}{% for child3 in child2.children %}

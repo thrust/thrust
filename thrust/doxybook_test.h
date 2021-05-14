@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-/*! \file 
+/*! \file
  *  \brief Test case for Doxybook rendering.
  */
 
@@ -23,7 +23,7 @@
 namespace thrust
 {
 
-/*! \addtogroup test Test 
+/*! \addtogroup test Test
  *  \{
  */
 
@@ -54,7 +54,7 @@ public:
   template <typename X, typename Y>
   using other = test_class<X, Y>;
 
-  enum class test_enum {
+  enum class test_enum_class {
     A = 15, ///< An enumerator. It is equal to 15.
     B,
     C
@@ -62,8 +62,12 @@ public:
 
   /*! \brief Construct an empty test class.
    */
+  test_class() = default;
+
+  /*! \brief Construct a test class.
+   */
   __host__ __device__ constexpr
-  test_class();
+  test_class(int);
 
   /*! \brief \c test_member_function is a function intended to exercise and
    *  test Doxybook rendering.
@@ -87,10 +91,18 @@ public:
   friend void test_friend_function();
 
   template <typename Z>
-  friend class test_friend_class;
+  friend class test_friend_class {};
 
   template <typename... Z>
-  friend struct test_predefined_friend_struct;
+  friend struct thrust::test_predefined_friend_struct;
+
+protected:
+
+  /*! \brief \c test_protected_member_function is a function intended to
+   *  exercise and test Doxybook rendering.
+   */
+  __device__
+  auto test_protected_member_function();
 };
 
 /*! \brief \c test_function is a function intended to exercise and test Doxybook
@@ -112,12 +124,26 @@ test_parameter_overflow_function(test_predefined_friend_struct<int, int, int, in
   test_predefined_friend_struct<int, int, int, int, int, int, int, int, int, int, int, int> u,
   test_predefined_friend_struct<int, int, int, int, int, int, int, int, int, int, int, int> v);
 
+/*! \brief \c test_enum is an enum namespace intended to exercise and test
+ *  Doxybook rendering.
+ */
+enum class test_enum {
+  X = 1, ///< An enumerator. It is equal to 1.
+  Y = X,
+  Z = 2
+};
+
+/*! \brief \c test_alias is a type alias intended to exercise and test Doxybook
+ * rendering.
+ */
+using test_alias = test_class;
+
 /*! \brief \c test_namespace is a namespace intended to exercise and test
  *  Doxybook rendering.
  */
 namespace test_namespace {
 
-inline constexpr int test_constant = 12; 
+inline constexpr int test_constant = 12;
 
 /*! \brief \c nested_function is a function intended to exercise and test
  *  Doxybook rendering.
@@ -125,7 +151,7 @@ inline constexpr int test_constant = 12;
 template <typename T, typename U>
 auto test_nested_function(T t, U u) noexcept(noexcept(t + u)) -> decltype(t + u)
 { return t + u; }
- 
+
 } // namespace test_namespace
 
 /*! \brief \c THRUST_TEST_MACRO is a macro intended to exercise and test
@@ -133,7 +159,7 @@ auto test_nested_function(T t, U u) noexcept(noexcept(t + u)) -> decltype(t + u)
  */
 #define THRUST_TEST_MACRO(x, y) thrust::test_namespace::nested_function(x, y)
 
-/*! \} // test 
+/*! \} // test
  */
 
 } // namespace thrust

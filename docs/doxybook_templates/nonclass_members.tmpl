@@ -14,58 +14,61 @@
   {%- for child in files -%}{{- render("table_row_brief.tmpl", child) -}}
   {%- endfor %}
 {% endif -%}
-{%- if exists("namespaces") %}## Namespaces
-
-  {%- include "table_header_brief.tmpl" -%}
-  {%- for child in namespaces -%}{{- render("table_row_brief.tmpl", child) -}}
-  {%- endfor %}
-{% endif -%}
-{%- if exists("publicClasses") %}## Classes
-
-  {%- include "table_header_brief.tmpl" -%}
-  {%- for child in publicClasses -%}{{- render("table_row_brief.tmpl", child) -}}
-  {%- endfor %}
-{% endif -%}
-{% if exists("publicTypes") %}## Types
-
 <code class="doxybook">
-{%- for child in publicTypes -%}
-  {{- render("synopsis_brief.tmpl", child) -}}
-  {{- render("synopsis_template_parameters.tmpl", child) -}}
-  <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
-  {%- if not loop.is_last -%}<br>{%- endif -%}
-{%- endfor -%}
+{%- if exists("namespaces") -%}
+  {%- for child in namespaces -%}
+    {{- render("synopsis_brief.tmpl", child) -}}
+    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b> { <i>…</i> }</span>
+    {%- if not loop.is_last -%}<br>{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("publicClasses") -%}
+  {%- for child in publicClasses -%}
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {#- The Doxygen metadata that a parent has on its nested   -#}{{- noop() -}}
+    {#- classes doesn't include their template parameters.     -#}{{- noop() -}}
+    {#- Fortunately, we have the refid of the nested class, so -#}{{- noop() -}}
+    {#- so we can just load the data from their page.          -#}{{- noop() -}}
+    {{- render("synopsis_template_parameters.tmpl", load(child.refid)) -}}
+    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>;</span>
+    {%- if not loop.is_last -%}<br>{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("publicTypes") -%}
+  {%- for child in publicTypes -%}
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {{- render("synopsis_template_parameters.tmpl", child) -}}
+    <span>{{- render("synopsis_kind_abbreviated.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+    {%- if not loop.is_last -%}<br>{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("publicAttributes") -%}
+  {%- for child in publicAttributes -%}
+    {{- render("synopsis_brief.tmpl", child) -}}
+    {{- render("synopsis_template_parameters.tmpl", child) -}}
+    <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+    {%- if not loop.is_last -%}<br>{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("publicFunctions") -%}
+  {%- for child in publicFunctions -%}
+    {%- if existsIn(child, "type") -%}
+      {#- If the child doesn't have a type, it's probably a      -#}{{- noop() -}}
+      {#- constructor that Doxygen put into a non-class entity   -#}{{- noop() -}}
+      {#- due to a bug whose nature is beyond me.                -#}{{- noop() -}}
+      {{- render("synopsis_brief.tmpl", child) -}}
+      {{- render("synopsis_template_parameters.tmpl", child) -}}
+      <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{{- noop() -}}
+      <span><b><a href="{{child.url}}">{{- extractQualifiedNameFromFunctionDefinition(child.definition) -}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
+      {%- if not loop.is_last -%}<br>{%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- if exists("defines") -%}
+  {%- for child in defines -%}
+    <span>{{- render("synopsis_kind.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
+    {%- if not loop.is_last -%}<br>{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
 </code>
 
-{% endif -%}
-{% if exists("publicAttributes") %}## Variables
-
-<code class="doxybook">
-{%- for child in publicAttributes -%}
-  {{- render("synopsis_brief.tmpl", child) -}}
-  {{- render("synopsis_template_parameters.tmpl", child) -}}
-  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}<b><a href="{{child.url}}">{{child.name}}</a></b>{{- render("synopsis_initializer_abbreviated.tmpl", child) -}};</span>
-  {%- if not loop.is_last -%}<br>{%- endif -%}
-{%- endfor -%}
-</code>
-
-{% endif -%}
-{%- if exists("publicFunctions") %}## Functions
-
-<code class="doxybook">
-{%- for child in publicFunctions -%}
-  {{- render("synopsis_brief.tmpl", child) -}}
-  {{- render("synopsis_template_parameters.tmpl", child) -}}
-  <span>{{- render("synopsis_type_and_leading_specifiers.tmpl", child) -}}</span>{#- -#}
-  <span><b><a href="{{child.url}}">{{child.name}}</a></b>({{- render("synopsis_function_parameters.tmpl", child) -}}){{- render("synopsis_function_trailing_specifiers.tmpl", child) -}};</span>
-  {%- if not loop.is_last -%}<br>{%- endif -%}
-{%- endfor -%}
-</code>
-
-{% endif -%}
-{% if exists("defines") %}## Defines
-
-|                | Name           |
-| -------------- | -------------- |
-{% for child in defines %}| {% if existsIn(child, "type") %}{{child.type}}{% endif %} | **[{{child.name}}]({{child.url}})**{% if existsIn(child, "params") %}({% for param in child.params %}{{param.name}}{% if existsIn(param, "defval") %} ={{param.defval}}{% endif %}{% if not loop.is_last %}, {% endif %}{% endfor %}){% endif %} {% if existsIn(child, "brief") %}<br>{{child.brief}}{% endif %} |
-{% endfor %}{% endif %}

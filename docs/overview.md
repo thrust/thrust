@@ -117,6 +117,49 @@ int main() {
 
 [See it on Godbolt](https://godbolt.org/z/rsdedW){: .btn }
 
+## Adding Thrust To A Project
+
+To use Thrust from your project, first recursively clone the Thrust Github
+  repository:
+
+```
+git clone --recursive https://github.com/NVIDIA/thrust.git
+```
+
+Since Thrust is a header library, so there is no need to build or install
+  Thrust to use it.
+The `thrust` directory contains a complete, ready-to-use Thrust
+  package upon checkout from GitHub.
+If you have the NVIDIA HPC SDK or the CUDA Toolkit installed, then Thrust will
+  already been on the include path when using those SDKs.
+
+We provide CMake configuration files that make it easy to include Thrust
+  from other CMake projects.
+See the [CMake section] for details.
+
+For non-CMake projects, compile with:
+- The Thrust include path (`-I<thrust repo root>/thrust`)
+- The CUB include path, if using the CUDA device system (`-I<thrust repo root>/dependencies/cub/`)
+- By default, the CPP host system and CUDA device system are used.
+  These can be changed using compiler definitions:
+  - `-DTHRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_XXX`,
+     where `XXX` is `CPP` (serial, default), `OMP` (OpenMP), or `TBB` (Intel TBB)
+  - `-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_XXX`, where `XXX` is
+    `CPP`, `OMP`, `TBB`, or `CUDA` (default).
+
+## Supported Compilers
+
+Thrust is regularly tested using the specified versions of the following
+  compilers.
+Unsupported versions may emit deprecation warnings, which can be
+  silenced by defining `THRUST_IGNORE_DEPRECATED_COMPILER` during compilation.
+
+- NVCC 11.0+
+- NVC++ 20.9+
+- GCC 5+
+- Clang 7+
+- MSVC 2019+ (19.20/16.0/14.20)
+
 ## CI Status
 
 <a href='https://gpuci.gpuopenanalytics.com/job/nvidia/job/thrust/job/prb/job/thrust-gpu-build/CXX_TYPE=gcc,CXX_VER=7,OS_TYPE=ubuntu,OS_VER=20.04,SDK_TYPE=cuda,SDK_VER=11.0-devel/'><img src='https://gpuci.gpuopenanalytics.com/job/nvidia/job/thrust/job/prb/job/thrust-gpu-build/CXX_TYPE=gcc,CXX_VER=7,OS_TYPE=ubuntu,OS_VER=20.04,SDK_TYPE=cuda,SDK_VER=11.0-devel/badge/icon?subject=NVCC%2011.0%20%2B%20GCC%207%20build%20and%20device%20tests'></a>
@@ -140,19 +183,6 @@ int main() {
 <a href='https://gpuci.gpuopenanalytics.com/job/nvidia/job/thrust/job/prb/job/thrust-cpu-build/CXX_TYPE=icc,CXX_VER=latest,OS_TYPE=ubuntu,OS_VER=20.04,SDK_TYPE=cuda,SDK_VER=11.0-devel/'><img src='https://gpuci.gpuopenanalytics.com/job/nvidia/job/thrust/job/prb/job/thrust-cpu-build/CXX_TYPE=icc,CXX_VER=latest,OS_TYPE=ubuntu,OS_VER=20.04,SDK_TYPE=cuda,SDK_VER=11.0-devel/badge/icon?subject=NVCC%2011.0%20%2B%20ICC%20build%20and%20host%20tests'></a>
 
 <a href='https://gpuci.gpuopenanalytics.com/job/nvidia/job/thrust/job/prb/job/thrust-cpu-build/CXX_TYPE=nvcxx,CXX_VER=20.9,OS_TYPE=ubuntu,OS_VER=20.04,SDK_TYPE=nvhpc,SDK_VER=20.9-devel/'><img src='https://gpuci.gpuopenanalytics.com/job/nvidia/job/thrust/job/prb/job/thrust-cpu-build/CXX_TYPE=nvcxx,CXX_VER=20.9,OS_TYPE=ubuntu,OS_VER=20.04,SDK_TYPE=nvhpc,SDK_VER=20.9-devel/badge/icon?subject=NVC%2B%2B%2020.9%20build%20and%20host%20tests'></a>
-
-## Adding Thrust To A CMake Project
-
-Since Thrust is a header library, there is no need to build or install Thrust
-  to use it.
-The `thrust` directory contains a complete, ready-to-use Thrust
-  package upon checkout from GitHub.
-If you have the NVIDIA HPC SDK or the CUDA Toolkit installed, then Thrust will
-  already been on the include path when using those SDKs.
-
-We provide CMake configuration files that make it easy to include Thrust
-  from other CMake projects.
-See the [CMake section] for details.
 
 ## Development Process
 

@@ -1,25 +1,113 @@
-# Changelog
+## Thrust 1.13.0 (NVIDIA HPC SDK 21.7)
 
-<!--
+Thrust 1.13.0 is the major release accompanying the NVIDIA HPC SDK 21.7 release.
 
-## Thrust 1.12.0
+### Breaking Changes
 
-Thrust 1.12.0 is a major release accompanying the NVIDIA HPC SDK 21.3 release.
-It introduces convenient abstractions for CUDA unified memory:
-  `thrust::universal_vector<T>`, `thrust::universal_ptr<T>`, and
-  `thrust::universal_allocator<T>`.
-This release also adds more `thrust::async` algorithms.
-Clang < 7 is now deprecated.
+- NVIDIA/thrust#1459: Remove deprecated aliases `thrust::host_space_tag` and
+  `thrust::device_space_tag`. Use the equivalent `thrust::host_system_tag` and
+  `thrust::device_system_tag` instead.
 
 ### New Features
 
+- NVIDIA/cub#306: Add radix-sort support for `bfloat16` in `thrust::sort`.
+  Thanks to Xiang Gao (@zasdfgbnm) for this contribution.
+- NVIDIA/thrust#1423: `thrust::transform_iterator` now supports non-copyable
+  types. Thanks to Jake Hemstad (@jrhemstad) for this contribution.
+- NVIDIA/thrust#1459: Introduce a new `THRUST_IGNORE_DEPRECATED_API` macro that
+  disables deprecation warnings on Thrust and CUB APIs.
+
+### Bug Fixes
+
+- NVIDIA/cub#277: Fixed sanitizer warnings when `thrust::sort` calls
+  into `cub::DeviceRadixSort`. Thanks to Andy Adinets (@canonizer) for this
+  contribution.
+- NVIDIA/thrust#1442: Reduce extraneous comparisons in `thrust::sort`'s merge
+  sort implementation.
+- NVIDIA/thrust#1447: Fix memory leak and avoid overallocation when
+  calling `reserve` on Thrust's vector containers. Thanks to Kai Germaschewski
+  (@germasch) for this contribution.
+
 ### Other Enhancements
 
-### Issues Fixed
+- NVIDIA/thrust#1405: Update links to standard C++ documentations from sgi to
+  cppreference. Thanks to Muhammad Adeel Hussain (@AdeilH) for this
+  contribution.
+- NVIDIA/thrust#1432: Updated build instructions in `CONTRIBUTING.md` to include
+  details on building CUB's test suite as part of Thrust.
 
--->
+## Thrust 1.12.1 (CUDA Toolkit 11.4)
 
-## Thrust 1.11.0
+Thrust 1.12.1 is a trivial patch release that slightly changes the phrasing of
+a deprecation message.
+
+## Thrust 1.12.0 (NVIDIA HPC SDK 21.3)
+
+Thrust 1.12.0 is the major release accompanying the NVIDIA HPC SDK 21.3
+  and the CUDA Toolkit 11.4.
+It includes a new `thrust::universal_vector`, which holds data that is
+  accessible from both host and device. This allows users to easily leverage
+  CUDA's unified memory with Thrust.
+New asynchronous `thrust::async:exclusive_scan` and `inclusive_scan` algorithms
+  have been added, and the synchronous versions of these have been updated to
+  use `cub::DeviceScan` directly.
+CUB radix sort for floating point types is now stable when both +0.0 and -0.0
+  are present in the input. This affects some usages of `thrust::sort` and
+  `thrust::stable_sort`.
+Many compilation warnings and subtle overflow bugs were fixed in the device
+  algorithms, including a long-standing bug that returned invalid temporary
+  storage requirements when `num_items` was close to (but not
+  exceeding) `INT32_MAX`.
+This release deprecates support for Clang < 7.0 and MSVC < 2019 (aka
+  19.20/16.0/14.20).
+
+### Breaking Changes
+
+- NVIDIA/thrust#1372: Deprecate Clang < 7 and MSVC < 2019.
+- NVIDIA/thrust#1376: Standardize `thrust::scan_by_key` functors / accumulator
+    types.
+  This may change the results from `scan_by_key` when input, output, and
+    initial value types are not the same type.
+
+### New Features
+
+- NVIDIA/thrust#1251: Add two new `thrust::async::` algorithms: `inclusive_scan`
+    and `exclusive_scan`.
+- NVIDIA/thrust#1334: Add `thrust::universal_vector`, `universal_ptr`,
+    and `universal_allocator`.
+
+### Bug Fixes
+
+- NVIDIA/thrust#1347: Qualify calls to `make_reverse_iterator`.
+- NVIDIA/thrust#1359: Enable stricter warning flags. This fixes several
+  outstanding issues:
+  - NVIDIA/cub#221: Overflow in `temp_storage_bytes` when `num_items` close to
+      (but not over) `INT32_MAX`.
+  - NVIDIA/cub#228: CUB uses non-standard C++ extensions that break strict
+      compilers.
+  - NVIDIA/cub#257: Warning when compiling `GridEvenShare` with unsigned
+      offsets.
+  - NVIDIA/thrust#974: Conversion warnings in `thrust::transform_reduce`.
+  - NVIDIA/thrust#1091: Conversion warnings in `thrust::counting_iterator`.
+- NVIDIA/thrust#1373: Fix compilation error when a standard library type is
+    wrapped in `thrust::optional`.
+  Thanks to Vukasin Milovanovic for this contribution.
+- NVIDIA/thrust#1388: Fix `signbit(double)` implementation on MSVC.
+- NVIDIA/thrust#1389: Support building Thrust tests without CUDA enabled.
+
+### Other Enhancements
+
+- NVIDIA/thrust#1304: Use `cub::DeviceScan` to implement
+    `thrust::exclusive_scan` and `thrust::inclusive_scan`.
+- NVIDIA/thrust#1362, NVIDIA/thrust#1370: Update smoke test naming.
+- NVIDIA/thrust#1380: Fix typos in `set_operation` documentation.
+    Thanks to Hongyu Cai for this contribution.
+- NVIDIA/thrust#1383: Include FreeBSD license in LICENSE.md for
+  `thrust::complex` implementation.
+- NVIDIA/thrust#1384: Add missing precondition to `thrust::gather`
+    documentation.
+
+## Thrust 1.11.0 (CUDA Toolkit 11.3)
 
 Thrust 1.11.0 is a major release providing bugfixes and performance
   enhancements.
