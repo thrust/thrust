@@ -42,7 +42,7 @@ namespace cuda_cub {
 namespace core {
 
   CUB_KERNEL_BEGIN
-  template <class Agent, class PtxPlan, class... Args>
+template <class Agent, class PtxPlan, class... Args>
    __global__ __launch_bounds__(PtxPlan::BLOCK_THREADS)
   void _kernel_agent(Args... args)
   {
