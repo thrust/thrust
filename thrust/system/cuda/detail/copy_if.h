@@ -41,6 +41,7 @@
 #include <thrust/distance.h>
 #include <thrust/detail/alignment.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
@@ -571,7 +572,7 @@ namespace __copy_if {
             class Predicate,
             class Size,
             class NumSelectedOutIt>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   static cudaError_t doit_step(void *           d_temp_storage,
                                size_t &         temp_storage_bytes,
                                ItemsIt          items,
@@ -680,7 +681,7 @@ namespace __copy_if {
             typename StencilIt,
             typename OutputIt,
             typename Predicate>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   OutputIt copy_if(execution_policy<Derived>& policy,
                    InputIt                    first,
                    InputIt                    last,
@@ -774,28 +775,29 @@ copy_if(execution_policy<Derived> &policy,
         OutputIterator             result,
         Predicate                  pred)
 {
-  OutputIterator ret = result;
+  auto run_par = [&]() -> OutputIterator {
+    return __copy_if::copy_if(policy,
+                              first,
+                              last,
+                              __copy_if::no_stencil_tag(),
+                              result,
+                              pred);
+  };
 
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __copy_if::copy_if(policy,
-                             first,
-                             last,
-                             __copy_if::no_stencil_tag(),
-                             result,
-                             pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::copy_if(cvt_to_seq(derived_cast(policy)),
-                          first,
-                          last,
-                          result,
-                          pred);
+  auto run_seq = [&]() -> OutputIterator {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::copy_if(cvt_to_seq(derived_cast(policy)),
+                           first,
+                           last,
+                           result,
+                           pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 } // func copy_if
 
 __thrust_exec_check_disable__
@@ -812,29 +814,25 @@ copy_if(execution_policy<Derived> &policy,
         OutputIterator             result,
         Predicate                  pred)
 {
-  OutputIterator ret = result;
+  auto run_par = [&]() -> OutputIterator {
+    return __copy_if::copy_if(policy, first, last, stencil, result, pred);
+  };
 
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __copy_if::copy_if(policy,
-                             first,
-                             last,
-                             stencil,
-                             result,
-                             pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::copy_if(cvt_to_seq(derived_cast(policy)),
-                          first,
-                          last,
-                          stencil,
-                          result,
-                          pred);
+  auto run_seq = [&]() -> OutputIterator {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::copy_if(cvt_to_seq(derived_cast(policy)),
+                           first,
+                           last,
+                           stencil,
+                           result,
+                           pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }    // func copy_if
 
 }    // namespace cuda_cub

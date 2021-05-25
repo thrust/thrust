@@ -48,7 +48,7 @@ namespace launcher {
     Size const shared_mem;
     cudaStream_t const stream;
 
-    THRUST_RUNTIME_FUNCTION
+    CUB_RUNTIME_FUNCTION
     triple_chevron(dim3         grid_,
                    dim3         block_,
                    Size         shared_mem_ = 0,

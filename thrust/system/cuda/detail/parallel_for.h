@@ -36,6 +36,7 @@
 #include <thrust/system/cuda/detail/core/agent_launcher.h>
 #include <thrust/system/cuda/detail/par_to_seq.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 
 namespace thrust
@@ -116,7 +117,7 @@ namespace __parallel_for {
   };    // struct ParallelForAgent
 
   template <typename F, typename Size>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   cudaError_t parallel_for(Size num_items, F f, cudaStream_t stream)
   {
     if (num_items == 0)
@@ -160,21 +161,27 @@ parallel_for(execution_policy<Derived> &policy,
              Size                       count)
 {
   if (count == 0)
-    return;
-
-  if (__THRUST_HAS_CUDART__)
   {
+    return;
+  }
+
+  auto run_par = [&]() {
     cudaStream_t stream = cuda_cub::stream(policy);
     cudaError_t  status = __parallel_for::parallel_for(count, f, stream);
     cuda_cub::throw_on_error(status, "parallel_for failed");
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
+  };
+
+  auto run_seq = [&]() {
+    // this lambda is only used when CDP is disabled:
+#ifndef CUB_RUNTIME_ENABLED
     for (Size idx = 0; idx != count; ++idx)
+    {
       f(idx);
+    }
 #endif
-  }
+  };
+
+  cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 }    // namespace cuda_cub

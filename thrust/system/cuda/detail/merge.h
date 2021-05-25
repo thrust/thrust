@@ -42,6 +42,7 @@ j * Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 #include <thrust/detail/mpl/math.h>
 #include <thrust/distance.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 
 namespace thrust
@@ -630,7 +631,7 @@ namespace __merge {
             class KeysOutputIt,
             class ItemsOutputIt,
             class CompareOp>
-  cudaError_t THRUST_RUNTIME_FUNCTION
+  cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void*         d_temp_storage,
             size_t&       temp_storage_bytes,
             KeysIt1       keys1,
@@ -757,7 +758,7 @@ namespace __merge {
             typename KeysOutputIt,
             typename ItemsOutputIt,
             typename CompareOp>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeysOutputIt, ItemsOutputIt>
   merge(execution_policy<Derived>& policy,
         KeysIt1                    keys1_first,
@@ -851,38 +852,40 @@ merge(execution_policy<Derived>& policy,
       CompareOp                  compare_op)
 
 {
-  ResultIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typedef typename thrust::iterator_value<KeysIt1>::type keys_type;
-    //
-    keys_type* null_ = NULL;
-    //
-    ret = __merge::merge<thrust::detail::false_type>(policy,
-                                                     keys1_first,
-                                                     keys1_last,
-                                                     keys2_first,
-                                                     keys2_last,
-                                                     null_,
-                                                     null_,
-                                                     result,
-                                                     null_,
-                                                     compare_op)
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::merge(cvt_to_seq(derived_cast(policy)),
-                        keys1_first,
-                        keys1_last,
-                        keys2_first,
-                        keys2_last,
-                        result,
-                        compare_op);
+  using result_t = ResultIt;
+
+  auto run_par = [&]() -> result_t {
+    using keys_type  = thrust::iterator_value_t<KeysIt1>;
+    keys_type *null_ = nullptr;
+    auto tmp = __merge::merge<thrust::detail::false_type>(policy,
+                                                          keys1_first,
+                                                          keys1_last,
+                                                          keys2_first,
+                                                          keys2_last,
+                                                          null_,
+                                                          null_,
+                                                          result,
+                                                          null_,
+                                                          compare_op);
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::merge(cvt_to_seq(derived_cast(policy)),
+                         keys1_first,
+                         keys1_last,
+                         keys2_first,
+                         keys2_last,
+                         result,
+                         compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived, class KeysIt1, class KeysIt2, class ResultIt>
@@ -925,9 +928,9 @@ merge_by_key(execution_policy<Derived> &policy,
              ItemsOutputIt              items_result,
              CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
     return __merge::merge<thrust::detail::true_type>(policy,
                                                      keys1_first,
                                                      keys1_last,
@@ -938,23 +941,27 @@ merge_by_key(execution_policy<Derived> &policy,
                                                      keys_result,
                                                      items_result,
                                                      compare_op);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::merge_by_key(cvt_to_seq(derived_cast(policy)),
-                               keys1_first,
-                               keys1_last,
-                               keys2_first,
-                               keys2_last,
-                               items1_first,
-                               items2_first,
-                               keys_result,
-                               items_result,
-                               compare_op);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::merge_by_key(cvt_to_seq(derived_cast(policy)),
+                                keys1_first,
+                                keys1_last,
+                                keys2_first,
+                                keys2_last,
+                                items1_first,
+                                items2_first,
+                                keys_result,
+                                items_result,
+                                compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

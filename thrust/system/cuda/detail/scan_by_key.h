@@ -38,6 +38,8 @@
 #include <thrust/detail/minmax.h>
 #include <thrust/distance.h>
 
+#include <cub/block/block_discontinuity.cuh>
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
@@ -556,7 +558,7 @@ namespace __scan_by_key {
     type init;
     ScanOp scan_op;
 
-    THRUST_RUNTIME_FUNCTION
+    CUB_RUNTIME_FUNCTION
     AddInitToScan(type init_, ScanOp scan_op_)
         : init(init_), scan_op(scan_op_) {}
 
@@ -581,7 +583,7 @@ namespace __scan_by_key {
             class ScanOp,
             class Size,
             class AddInitToScan>
-  THRUST_RUNTIME_FUNCTION cudaError_t
+  CUB_RUNTIME_FUNCTION cudaError_t
   doit_step(void *         d_temp_storage,
             size_t &       temp_storage_bytes,
             KeysInputIt    keys_input_it,
@@ -696,7 +698,7 @@ namespace __scan_by_key {
             typename EqualityOp,
             typename ScanOp,
             typename AddInitToScan>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   ValuesOutputIt scan_by_key(execution_policy<Derived>& policy,
                              KeysInputIt                keys_first,
                              KeysInputIt                keys_last,
@@ -777,32 +779,36 @@ inclusive_scan_by_key(execution_policy<Derived> &policy,
                       BinaryPred                 binary_pred,
                       ScanOp                     scan_op)
 {
-  ValOutputIt ret = value_result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typedef typename iterator_traits<ValInputIt>::value_type T;
-    ret = __scan_by_key::scan_by_key<thrust::detail::true_type>(policy,
-                                                        key_first,
-                                                        key_last,
-                                                        value_first,
-                                                        value_result,
-                                                        binary_pred,
-                                                        scan_op,
-                                                        __scan_by_key::DoNothing<T>());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::inclusive_scan_by_key(cvt_to_seq(derived_cast(policy)),
-                                        key_first,
-                                        key_last,
-                                        value_first,
-                                        value_result,
-                                        binary_pred,
-                                        scan_op);
+  using result_t = ValOutputIt;
+
+  auto run_par = [&]() -> result_t {
+    using no_op_t = __scan_by_key::DoNothing<iterator_value_t<ValInputIt>>;
+    return __scan_by_key::scan_by_key<thrust::detail::true_type>(policy,
+                                                                 key_first,
+                                                                 key_last,
+                                                                 value_first,
+                                                                 value_result,
+                                                                 binary_pred,
+                                                                 scan_op,
+                                                                 no_op_t{});
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return value_result;
+#else
+    return thrust::inclusive_scan_by_key(cvt_to_seq(derived_cast(policy)),
+                                         key_first,
+                                         key_last,
+                                         value_first,
+                                         value_result,
+                                         binary_pred,
+                                         scan_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -871,33 +877,37 @@ exclusive_scan_by_key(execution_policy<Derived> &policy,
                       BinaryPred                 binary_pred,
                       ScanOp                     scan_op)
 {
-  ValOutputIt ret = value_result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __scan_by_key::scan_by_key<thrust::detail::false_type>(
-        policy,
-        key_first,
-        key_last,
-        value_first,
-        value_result,
-        binary_pred,
-        scan_op,
-        __scan_by_key::AddInitToScan<Init, ScanOp>(init, scan_op));
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::exclusive_scan_by_key(cvt_to_seq(derived_cast(policy)),
-                                        key_first,
-                                        key_last,
-                                        value_first,
-                                        value_result,
-                                        init,
-                                        binary_pred,
-                                        scan_op);
+  using result_t = ValOutputIt;
+
+  auto run_par = [&]() -> result_t {
+    return __scan_by_key::scan_by_key<thrust::detail::false_type>(
+      policy,
+      key_first,
+      key_last,
+      value_first,
+      value_result,
+      binary_pred,
+      scan_op,
+      __scan_by_key::AddInitToScan<Init, ScanOp>(init, scan_op));
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return value_result;
+#else
+    return thrust::exclusive_scan_by_key(cvt_to_seq(derived_cast(policy)),
+                                         key_first,
+                                         key_last,
+                                         value_first,
+                                         value_result,
+                                         init,
+                                         binary_pred,
+                                         scan_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

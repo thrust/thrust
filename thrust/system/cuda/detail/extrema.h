@@ -37,6 +37,7 @@
 #include <thrust/pair.h>
 #include <thrust/distance.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
@@ -150,7 +151,7 @@ namespace __extrema {
             class OutputIt,
             class Size,
             class ReductionOp>
-  cudaError_t THRUST_RUNTIME_FUNCTION
+  cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void *       d_temp_storage,
             size_t &     temp_storage_bytes,
             InputIt      input_it,
@@ -348,7 +349,7 @@ namespace __extrema {
             typename Size,
             typename BinaryOp,
             typename T>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   T extrema(execution_policy<Derived>& policy,
             InputIt                    first,
             Size                       num_items,
@@ -407,7 +408,7 @@ namespace __extrema {
             class Derived,
             class ItemsIt,
             class BinaryPred>
-  ItemsIt THRUST_RUNTIME_FUNCTION
+  ItemsIt CUB_RUNTIME_FUNCTION
   element(execution_policy<Derived> &policy,
           ItemsIt                    first,
           ItemsIt                    last,
@@ -455,24 +456,26 @@ min_element(execution_policy<Derived> &policy,
             ItemsIt                    last,
             BinaryPred                 binary_pred)
 {
-  ItemsIt ret = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __extrema::element<__extrema::arg_min_f>(policy,
-                                                   first,
-                                                   last,
-                                                   binary_pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::min_element(cvt_to_seq(derived_cast(policy)),
-                              first,
-                              last,
-                              binary_pred);
+  auto run_par = [&]() -> ItemsIt {
+    return __extrema::element<__extrema::arg_min_f>(policy,
+                                                    first,
+                                                    last,
+                                                    binary_pred);
+  };
+
+  auto run_seq = [&]() -> ItemsIt {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::min_element(cvt_to_seq(derived_cast(policy)),
+                               first,
+                               last,
+                               binary_pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -498,24 +501,26 @@ max_element(execution_policy<Derived> &policy,
             ItemsIt                    last,
             BinaryPred                 binary_pred)
 {
-  ItemsIt ret = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __extrema::element<__extrema::arg_max_f>(policy,
-                                                   first,
-                                                   last,
-                                                   binary_pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::max_element(cvt_to_seq(derived_cast(policy)),
-                              first,
-                              last,
-                              binary_pred);
+  auto run_par = [&]() -> ItemsIt {
+    return __extrema::element<__extrema::arg_max_f>(policy,
+                                                    first,
+                                                    last,
+                                                    binary_pred);
+  };
+
+  auto run_seq = [&]() -> ItemsIt {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::max_element(cvt_to_seq(derived_cast(policy)),
+                               first,
+                               last,
+                               binary_pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -541,24 +546,23 @@ minmax_element(execution_policy<Derived> &policy,
                ItemsIt                    last,
                BinaryPred                 binary_pred)
 {
-  pair<ItemsIt, ItemsIt> ret = thrust::make_pair(first, first);
+  using result_t = pair<ItemsIt, ItemsIt>;
 
-  if (__THRUST_HAS_CUDART__)
-  {
+  auto run_par = [&]() -> result_t {
     if (first == last)
+    {
       return thrust::make_pair(last, last);
+    }
 
     typedef typename iterator_traits<ItemsIt>::value_type      InputType;
     typedef typename iterator_traits<ItemsIt>::difference_type IndexType;
 
     IndexType num_items = static_cast<IndexType>(thrust::distance(first, last));
 
-
     typedef tuple<ItemsIt, counting_iterator_t<IndexType> > iterator_tuple;
     typedef zip_iterator<iterator_tuple> zip_iterator;
 
     iterator_tuple iter_tuple = thrust::make_tuple(first, counting_iterator_t<IndexType>(0));
-
 
     typedef __extrema::arg_minmax_f<InputType, IndexType, BinaryPred> arg_minmax_t;
     typedef typename arg_minmax_t::two_pairs_type  two_pairs_type;
@@ -574,19 +578,23 @@ minmax_element(execution_policy<Derived> &policy,
                                                num_items,
                                                arg_minmax_t(binary_pred),
                                                (two_pairs_type *)(NULL));
-    ret = thrust::make_pair(first + get<1>(get<0>(result)),
-                    first + get<1>(get<1>(result)));
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::minmax_element(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 last,
-                                 binary_pred);
+    return thrust::make_pair(first + get<1>(get<0>(result)),
+                             first + get<1>(get<1>(result)));
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(first, first);
+#else
+    return thrust::minmax_element(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  last,
+                                  binary_pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

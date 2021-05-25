@@ -44,6 +44,7 @@
 
 #include <cub/agent/single_pass_scan_operators.cuh> // cub::ScanTileState
 #include <cub/block/block_scan.cuh>
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
@@ -578,7 +579,7 @@ namespace __partition {
             class Predicate,
             class Size,
             class NumSelectedOutIt>
-  static cudaError_t THRUST_RUNTIME_FUNCTION
+  static cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void *           d_temp_storage,
             size_t &         temp_storage_bytes,
             ItemsIt          items,
@@ -693,7 +694,7 @@ namespace __partition {
             typename SelectedOutIt,
             typename RejectedOutIt,
             typename Predicate>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<SelectedOutIt, RejectedOutIt>
   partition(execution_policy<Derived>& policy,
             InputIt                    first,
@@ -779,7 +780,7 @@ namespace __partition {
             typename Iterator,
             typename StencilIt,
             typename Predicate>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   Iterator partition_inplace(execution_policy<Derived>& policy,
                              Iterator                   first,
                              Iterator                   last,
@@ -833,30 +834,34 @@ partition_copy(execution_policy<Derived> &policy,
                RejectedOutIt              rejected_result,
                Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                            first,
-                            last,
-                            stencil,
-                            selected_result,
-                            rejected_result,
-                            predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 last,
-                                 stencil,
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  stencil,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  last,
+                                  stencil,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -873,29 +878,33 @@ partition_copy(execution_policy<Derived> &policy,
                RejectedOutIt              rejected_result,
                Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                                 first,
-                                 last,
-                                 __partition::no_stencil_tag(),
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 last,
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  __partition::no_stencil_tag(),
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  last,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -912,29 +921,33 @@ stable_partition_copy(execution_policy<Derived> &policy,
                       RejectedOutIt              rejected_result,
                       Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                                 first,
-                                 last,
-                                 __partition::no_stencil_tag(),
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
-                                        first,
-                                        last,
-                                        selected_result,
-                                        rejected_result,
-                                        predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  __partition::no_stencil_tag(),
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
+                                         first,
+                                         last,
+                                         selected_result,
+                                         rejected_result,
+                                         predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -953,30 +966,34 @@ stable_partition_copy(execution_policy<Derived> &policy,
                       RejectedOutIt              rejected_result,
                       Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                                 first,
-                                 last,
-                                 stencil,
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
-                                        first,
-                                        last,
-                                        stencil,
-                                        selected_result,
-                                        rejected_result,
-                                        predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  stencil,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
+                                         first,
+                                         last,
+                                         stencil,
+                                         selected_result,
+                                         rejected_result,
+                                         predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 /// inplace
@@ -993,22 +1010,30 @@ partition(execution_policy<Derived> &policy,
           StencilIt                  stencil,
           Predicate                  predicate)
 {
-  Iterator ret = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition_inplace(policy, first, last, stencil, predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition(cvt_to_seq(derived_cast(policy)),
-                            first,
-                            last,
-                            stencil,
-                            predicate);
+  using result_t = Iterator;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition_inplace(policy,
+                                          first,
+                                          last,
+                                          stencil,
+                                          predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::partition(cvt_to_seq(derived_cast(policy)),
+                             first,
+                             last,
+                             stencil,
+                             predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -1021,25 +1046,29 @@ partition(execution_policy<Derived> &policy,
           Iterator                   last,
           Predicate                  predicate)
 {
-  Iterator ret = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition_inplace(policy,
-                                         first,
-                                         last,
-                                         __partition::no_stencil_tag(),
-                                         predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition(cvt_to_seq(derived_cast(policy)),
-                            first,
-                            last,
-                            predicate);
+  using result_t = Iterator;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition_inplace(policy,
+                                          first,
+                                          last,
+                                          __partition::no_stencil_tag(),
+                                          predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::partition(cvt_to_seq(derived_cast(policy)),
+                             first,
+                             last,
+                             predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -1054,30 +1083,36 @@ stable_partition(execution_policy<Derived> &policy,
                  StencilIt                  stencil,
                  Predicate                  predicate)
 {
-  Iterator result = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    result = __partition::partition_inplace(policy,
+  using result_t = Iterator;
+
+  auto run_par = [&]() -> result_t {
+    auto result = __partition::partition_inplace(policy,
+                                                 first,
+                                                 last,
+                                                 stencil,
+                                                 predicate);
+
+    // partition returns rejected values in reverse order
+    // so reverse the rejected elements to make it stable
+    cuda_cub::reverse(policy, result, last);
+
+    return result;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
                                     first,
                                     last,
                                     stencil,
                                     predicate);
-
-    // partition returns rejected values in reverese order
-    // so reverse the rejected elements to make it stable
-    cuda_cub::reverse(policy, result, last);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    result = thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
-                                      first,
-                                      last,
-                                      stencil,
-                                      predicate);
 #endif
-  }
-  return result;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -1090,29 +1125,34 @@ stable_partition(execution_policy<Derived> &policy,
                  Iterator                   last,
                  Predicate                  predicate)
 {
-  Iterator result = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    result = __partition::partition_inplace(policy,
-                                       first,
-                                       last,
-                                       __partition::no_stencil_tag(),
-                                       predicate);
+  using result_t = Iterator;
 
-    // partition returns rejected values in reverese order
+  auto run_par = [&]() -> result_t {
+    auto result = __partition::partition_inplace(policy,
+                                                 first,
+                                                 last,
+                                                 __partition::no_stencil_tag(),
+                                                 predicate);
+
+    // partition returns rejected values in reverse order
     // so reverse the rejected elements to make it stable
     cuda_cub::reverse(policy, result, last);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    result = thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
-                                      first,
-                                      last,
-                                      predicate);
+    return result;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
+                                    first,
+                                    last,
+                                    predicate);
 #endif
-  }
-  return result;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

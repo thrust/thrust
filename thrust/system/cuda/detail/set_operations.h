@@ -42,6 +42,7 @@
 #include <thrust/distance.h>
 #include <thrust/detail/alignment.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 
 namespace thrust
@@ -1080,7 +1081,7 @@ namespace __set_operations {
             class ValuesOutputIt,
             class CompareOp,
             class SetOp>
-  cudaError_t THRUST_RUNTIME_FUNCTION
+  cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void *         d_temp_storage,
             size_t &       temp_storage_size,
             KeysIt1        keys1,
@@ -1239,7 +1240,7 @@ namespace __set_operations {
            typename ValuesOutputIt,
            typename CompareOp,
            typename SetOp>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeysOutputIt, ValuesOutputIt>
   set_operations(execution_policy<Derived>& policy,
                  KeysIt1                    keys1_first,
@@ -1355,38 +1356,42 @@ set_difference(execution_policy<Derived> &policy,
                OutputIt                   result,
                CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_difference())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_difference(cvt_to_seq(derived_cast(policy)),
-                                 items1_first,
-                                 items1_last,
-                                 items2_first,
-                                 items2_last,
-                                 result,
-                                 compare);
+  using result_t = OutputIt;
+
+  auto run_par = [&]() -> result_t {
+    using items1_t = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = nullptr;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_difference());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_difference(cvt_to_seq(derived_cast(policy)),
+                                  items1_first,
+                                  items1_last,
+                                  items2_first,
+                                  items2_last,
+                                  result,
+                                  compare);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1429,38 +1434,42 @@ set_intersection(execution_policy<Derived> &policy,
                  OutputIt                   result,
                  CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_intersection())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_intersection(cvt_to_seq(derived_cast(policy)),
-                                   items1_first,
-                                   items1_last,
-                                   items2_first,
-                                   items2_last,
-                                   result,
-                                   compare);
+  using result_t = OutputIt;
+
+  auto run_par = [&]() -> result_t {
+    using items1_t  = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = NULL;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_intersection());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_intersection(cvt_to_seq(derived_cast(policy)),
+                                    items1_first,
+                                    items1_last,
+                                    items2_first,
+                                    items2_last,
+                                    result,
+                                    compare);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1503,40 +1512,43 @@ set_symmetric_difference(execution_policy<Derived> &policy,
                          OutputIt                   result,
                          CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_symmetric_difference())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_symmetric_difference(cvt_to_seq(derived_cast(policy)),
-                                           items1_first,
-                                           items1_last,
-                                           items2_first,
-                                           items2_last,
-                                           result,
-                                           compare);
-#endif
-  }
-  return ret;
-}
+  using result_t = OutputIt;
 
+  auto run_par = [&]() -> result_t {
+    using items1_t  = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = nullptr;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_symmetric_difference());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_symmetric_difference(cvt_to_seq(derived_cast(policy)),
+                                            items1_first,
+                                            items1_last,
+                                            items2_first,
+                                            items2_last,
+                                            result,
+                                            compare);
+#endif
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
+}
 
 template <class Derived,
           class ItemsIt1,
@@ -1577,40 +1589,43 @@ set_union(execution_policy<Derived> &policy,
           OutputIt                   result,
           CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_union())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_union(cvt_to_seq(derived_cast(policy)),
-                            items1_first,
-                            items1_last,
-                            items2_first,
-                            items2_last,
-                            result,
-                            compare);
-#endif
-  }
-  return ret;
-}
+  using result_t = OutputIt;
 
+  auto run_par = [&]() -> result_t {
+    using items1_t  = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = nullptr;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_union());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_union(cvt_to_seq(derived_cast(policy)),
+                             items1_first,
+                             items1_last,
+                             items2_first,
+                             items2_last,
+                             result,
+                             compare);
+#endif
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
+}
 
 template <class Derived,
           class ItemsIt1,
@@ -1664,38 +1679,42 @@ set_difference_by_key(execution_policy<Derived> &policy,
                       ItemsOutputIt              items_result,
                       CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items2_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_difference());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_difference_by_key(cvt_to_seq(derived_cast(policy)),
-                                        keys1_first,
-                                        keys1_last,
-                                        keys2_first,
-                                        keys2_last,
-                                        items1_first,
-                                        items2_first,
-                                        keys_result,
-                                        items_result,
-                                        compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items2_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_difference());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_difference_by_key(cvt_to_seq(derived_cast(policy)),
+                                         keys1_first,
+                                         keys1_last,
+                                         keys2_first,
+                                         keys2_last,
+                                         items1_first,
+                                         items2_first,
+                                         keys_result,
+                                         items_result,
+                                         compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1751,37 +1770,41 @@ set_intersection_by_key(execution_policy<Derived> &policy,
                         ItemsOutputIt              items_result,
                         CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items1_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_intersection());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_intersection_by_key(cvt_to_seq(derived_cast(policy)),
-                                          keys1_first,
-                                          keys1_last,
-                                          keys2_first,
-                                          keys2_last,
-                                          items1_first,
-                                          keys_result,
-                                          items_result,
-                                          compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items1_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_intersection());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_intersection_by_key(cvt_to_seq(derived_cast(policy)),
+                                           keys1_first,
+                                           keys1_last,
+                                           keys2_first,
+                                           keys2_last,
+                                           items1_first,
+                                           keys_result,
+                                           items_result,
+                                           compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1836,38 +1859,43 @@ set_symmetric_difference_by_key(execution_policy<Derived> &policy,
                                 ItemsOutputIt              items_result,
                                 CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items2_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_symmetric_difference());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_symmetric_difference_by_key(cvt_to_seq(derived_cast(policy)),
-                                                  keys1_first,
-                                                  keys1_last,
-                                                  keys2_first,
-                                                  keys2_last,
-                                                  items1_first,
-                                                  items2_first,
-                                                  keys_result,
-                                                  items_result,
-                                                  compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items2_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_symmetric_difference());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_symmetric_difference_by_key(cvt_to_seq(
+                                                     derived_cast(policy)),
+                                                   keys1_first,
+                                                   keys1_last,
+                                                   keys2_first,
+                                                   keys2_last,
+                                                   items1_first,
+                                                   items2_first,
+                                                   keys_result,
+                                                   items_result,
+                                                   compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1924,38 +1952,42 @@ set_union_by_key(execution_policy<Derived> &policy,
                  ItemsOutputIt              items_result,
                  CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items2_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_union());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_union_by_key(cvt_to_seq(derived_cast(policy)),
-                                   keys1_first,
-                                   keys1_last,
-                                   keys2_first,
-                                   keys2_last,
-                                   items1_first,
-                                   items2_first,
-                                   keys_result,
-                                   items_result,
-                                   compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items2_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_union());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_union_by_key(cvt_to_seq(derived_cast(policy)),
+                                    keys1_first,
+                                    keys1_last,
+                                    keys2_first,
+                                    keys2_last,
+                                    items1_first,
+                                    items2_first,
+                                    keys_result,
+                                    items_result,
+                                    compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

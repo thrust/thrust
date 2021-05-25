@@ -44,6 +44,7 @@
 #include <thrust/distance.h>
 #include <thrust/detail/alignment.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
@@ -573,7 +574,7 @@ namespace __unique_by_key {
             class BinaryPred,
             class Size,
             class NumSelectedOutIt>
-  static cudaError_t THRUST_RUNTIME_FUNCTION
+  static cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void *           d_temp_storage,
             size_t &         temp_storage_bytes,
             KeyInputIt       keys_in,
@@ -684,7 +685,7 @@ namespace __unique_by_key {
             typename KeyOutputIt,
             typename ValOutputIt,
             typename BinaryPred>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeyOutputIt, ValOutputIt>
   unique_by_key(execution_policy<Derived>& policy,
                 KeyInputIt                 keys_first,
@@ -790,30 +791,34 @@ unique_by_key_copy(execution_policy<Derived> &policy,
                    ValOutputIt                values_result,
                    BinaryPred                 binary_pred)
 {
-  pair<KeyOutputIt, ValOutputIt> ret = thrust::make_pair(keys_result, values_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __unique_by_key::unique_by_key(policy,
-                                keys_first,
-                                keys_last,
-                                values_first,
-                                keys_result,
-                                values_result,
-                                binary_pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::unique_by_key_copy(cvt_to_seq(derived_cast(policy)),
-                                     keys_first,
-                                     keys_last,
-                                     values_first,
-                                     keys_result,
-                                     values_result,
-                                     binary_pred);
+  using result_t = pair<KeyOutputIt, ValOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __unique_by_key::unique_by_key(policy,
+                                          keys_first,
+                                          keys_last,
+                                          values_first,
+                                          keys_result,
+                                          values_result,
+                                          binary_pred);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, values_result);
+#else
+    return thrust::unique_by_key_copy(cvt_to_seq(derived_cast(policy)),
+                                      keys_first,
+                                      keys_last,
+                                      values_first,
+                                      keys_result,
+                                      values_result,
+                                      binary_pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -850,28 +855,32 @@ unique_by_key(execution_policy<Derived> &policy,
               ValInputIt                 values_first,
               BinaryPred                 binary_pred)
 {
-  pair<KeyInputIt, ValInputIt> ret = thrust::make_pair(keys_first, values_first);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = cuda_cub::unique_by_key_copy(policy,
-                                       keys_first,
-                                       keys_last,
-                                       values_first,
-                                       keys_first,
-                                       values_first,
-                                       binary_pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::unique_by_key(cvt_to_seq(derived_cast(policy)),
-                                keys_first,
-                                keys_last,
-                                values_first,
-                                binary_pred);
+  using result_t = pair<KeyInputIt, ValInputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return cuda_cub::unique_by_key_copy(policy,
+                                        keys_first,
+                                        keys_last,
+                                        values_first,
+                                        keys_first,
+                                        values_first,
+                                        binary_pred);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_first, values_first);
+#else
+    return thrust::unique_by_key(cvt_to_seq(derived_cast(policy)),
+                                 keys_first,
+                                 keys_last,
+                                 values_first,
+                                 binary_pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

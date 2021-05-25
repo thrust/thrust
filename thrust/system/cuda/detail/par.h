@@ -53,7 +53,7 @@ public:
   execute_on_stream_base(cudaStream_t stream_ = default_stream())
       : stream(stream_) {}
 
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   Derived
   on(cudaStream_t const &s) const
   {
@@ -97,7 +97,7 @@ struct par_t : execution_policy<par_t>,
 
   typedef execute_on_stream stream_attachment_type;
 
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   stream_attachment_type
   on(cudaStream_t const &stream) const
   {

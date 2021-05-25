@@ -50,6 +50,7 @@
 // These algorithms need to be unified.
 #include <cub/device/device_reduce.cuh>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
@@ -821,7 +822,7 @@ namespace __reduce_by_key {
             class EqualityOp,
             class ReductionOp,
             class Size>
-  THRUST_RUNTIME_FUNCTION cudaError_t
+  CUB_RUNTIME_FUNCTION cudaError_t
   doit_step(void *          d_temp_storage,
             size_t &        temp_storage_bytes,
             KeysInputIt     keys_input_it,
@@ -939,7 +940,7 @@ namespace __reduce_by_key {
             typename ValuesOutputIt,
             typename EqualityOp,
             typename ReductionOp>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeysOutputIt, ValuesOutputIt>
   reduce_by_key(execution_policy<Derived>& policy,
                 KeysInputIt                keys_first,
@@ -1048,32 +1049,36 @@ reduce_by_key(execution_policy<Derived> &policy,
               BinaryPred                 binary_pred,
               BinaryOp                   binary_op)
 {
-  pair<KeyOutputIt, ValOutputIt> ret = thrust::make_pair(keys_output, values_output);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __reduce_by_key::reduce_by_key(policy,
-                                         keys_first,
-                                         keys_last,
-                                         values_first,
-                                         keys_output,
-                                         values_output,
-                                         binary_pred,
-                                         binary_op);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::reduce_by_key(cvt_to_seq(derived_cast(policy)),
-                                keys_first,
-                                keys_last,
-                                values_first,
-                                keys_output,
-                                values_output,
-                                binary_pred,
-                                binary_op);
+  using result_t = pair<KeyOutputIt, ValOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __reduce_by_key::reduce_by_key(policy,
+                                          keys_first,
+                                          keys_last,
+                                          values_first,
+                                          keys_output,
+                                          values_output,
+                                          binary_pred,
+                                          binary_op);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_output, values_output);
+#else
+    return thrust::reduce_by_key(cvt_to_seq(derived_cast(policy)),
+                                 keys_first,
+                                 keys_last,
+                                 values_first,
+                                 keys_output,
+                                 values_output,
+                                 binary_pred,
+                                 binary_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 
