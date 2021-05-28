@@ -1,0 +1,19 @@
+{%- if exists("kind") and kind == "function" -%}
+  {{- escape(extractQualifiedNameFromFunctionDefinition(definition)) -}}
+{%- else if exists("kind") and kind in ["enum", "using", "typedef"] -%}
+  {#- Doxygen does not give us a way to get the correct fully -#}{{ noop() -}}
+  {#- qualified name of these things.                         -#}{{ noop() -}}
+  {{- escape(name) -}}
+{%- else if exists("kind") and kind == "friend" -%}
+  {#- The `fullname` of friends will be wrong, but their      -#}{{ noop() -}}
+  {#- `name` will be correct and fully qualified.             -#}{{ noop() -}}
+  {{- escape(name) -}}
+{%- else if exists("fullname") -%}
+  {{- escape(fullname) -}}
+{%- else if exists("name") -%}
+  {#- Base classes won't have a `fullname`, but their `name`s -#}{{ noop() -}}
+  {#- will be correct and fully qualified.                    -#}{{ noop() -}}
+  {{- escape(name) -}}
+{%- else -%}
+  {{- escape(title) -}}
+{%- endif -%}
