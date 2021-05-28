@@ -1,20 +1,24 @@
-{%- if exists("publicTypes") %}## Types Documentation
-
-  {%- for child in publicTypes %}{{- render("member_details.tmpl", child) -}}
+{%- if exists("publicTypes") -%}## Types
+  {%- for child in publicTypes -%}
+    {% include "title_nonmember.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{% endif -%}
-{%- if exists("publicFunctions") %}## Functions Documentation
-
-  {%- for child in publicFunctions %}{{- render("member_details.tmpl", child) -}}
+{%- endif -%}
+{%- if exists("publicAttributes") %}## Variables
+  {%- for child in publicAttributes -%}
+    {% include "title_nonmember.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{% endif -%}
-{%- if exists("publicAttributes") %}## Variables Documentation
-
-  {%- for child in publicAttributes %}{{- render("member_details.tmpl", child) -}}
+{%- endif -%}
+{%- if exists("publicFunctions") %}## Functions
+  {%- for child in publicFunctions -%}
+    {% include "title_nonmember.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{% endif -%}
-{%- if exists("defines") %}## Macros Documentation
-
-  {%- for child in defines %}{{- render("member_details.tmpl", child) -}}
+{%- endif -%}
+{%- if exists("defines") %}## Macros
+  {%- for child in defines -%}
+    {% include "title_nonmember.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{% endif -%}
+{%- endif -%}
