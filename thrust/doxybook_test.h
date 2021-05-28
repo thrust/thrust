@@ -33,6 +33,12 @@ namespace thrust
 template <typename... Z>
 struct test_predefined_friend_struct {};
 
+/*! \brief \c test_predefined_friend_function is a function intended to
+ *  exercise and test Doxybook rendering.
+ */
+template <typename Z>
+void test_predefined_friend_function();
+
 /*! \brief \c test_class is a class intended to exercise and test Doxybook
  *  rendering.
  *
@@ -88,7 +94,10 @@ public:
                                           test_predefined_friend_struct<int, int, int, int, int, int, int, int, int, int, int, int, int, int, int> v);
 
   template <typename Z>
-  friend void test_friend_function();
+  friend void test_friend_function() {}
+
+  template <typename Z>
+  friend void test_predefined_friend_function();
 
   template <typename Z>
   friend class test_friend_class {};
