@@ -52,7 +52,7 @@ public:
   [[deprecated]] constexpr int test_member_constant = 42; ///< A test member constant.
 
   template <typename X, typename Y>
-  using other = test_class<X, Y>;
+  using test_type_alias = test_class<X, Y>;
 
   enum class test_enum_class {
     A = 15, ///< An enumerator. It is equal to 15.
@@ -73,7 +73,7 @@ public:
    *  test Doxybook rendering.
    */
   __host__ __device__ constexpr
-  int test_member_function();
+  virtual int test_member_function() = 0;
 
   /*! \brief \c test_parameter_overflow_member_function is a function intended
    *  to test Doxybook's rendering of function and template parameters that exceed
@@ -98,11 +98,33 @@ public:
 
 protected:
 
+  template <typename Z>
+  class test_protected_nested_class {};
+
   /*! \brief \c test_protected_member_function is a function intended to
    *  exercise and test Doxybook rendering.
    */
   __device__
   auto test_protected_member_function();
+};
+
+/*! \brief \c test_class is a derived class intended to exercise and test
+ *  Doxybook rendering.
+ */
+class test_derived_class : test_class<int, double>
+{
+  template <typename Z>
+  struct test_derived_nested_struct {};
+
+  double test_derived_member_variable = 3.14; ///< A test member variable.
+
+  typedef double test_typedef;
+
+  /*! \brief \c test_derived_member_function is a function intended to exercise
+   *  and test Doxybook rendering.
+   */
+  __host__ __device__ constexpr
+  double test_derived_member_function(int, int);
 };
 
 /*! \brief \c test_function is a function intended to exercise and test Doxybook
