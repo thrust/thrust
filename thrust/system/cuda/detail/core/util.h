@@ -303,8 +303,8 @@ namespace core {
   template <class T>
   class cuda_optional
   {
-    cudaError_t status_;
-    T           value_;
+    cudaError_t status_{};
+    T           value_{};
 
   public:
     __host__ __device__
