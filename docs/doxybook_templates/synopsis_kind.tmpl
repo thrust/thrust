@@ -1,8 +1,8 @@
 {%- if kind == "interface" %}class {{ noop() -}}
-{%- else if kind == "typedef" %}typedef {{type}} {{ noop() -}}
+{%- else if kind == "typedef" %}typedef {{ type -}}
 {%- else if kind == "enum" %}enum {% if strong %}class {% endif -%} {{ noop() -}}
 {%- else if kind == "friend" %}friend {{ noop() -}}
-  {%- if type == "class" or type == "struct" %}{{type}} {% endif -%}
+  {%- if type == "class" or type == "struct" %}{{ type }} {% endif -%}
 {%- else if kind == "define" %}#define {{ noop() -}}
 {%- else %}{{kind}} {{ noop() -}}
 {%- endif -%}

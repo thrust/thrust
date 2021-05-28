@@ -1,3 +1,11 @@
 {%- for param in params -%}
-{% if not loop.is_first %}&nbsp;&nbsp;{% endif %}{{param.type}}{% if not isEmpty(param.name) %} {% endif %}{{param.name}}{% if existsIn(param, "defval") %} = {{param.defval}}{% endif %}{% if not loop.is_last %},</span><span>{%- endif -%}
+  {%- if not loop.is_first -%}&nbsp;&nbsp;{%- endif -%}
+  {{- param.type -}}
+  {%- if not isEmpty(param.name) %} {% endif -%}
+  {{- param.name -}}
+  {%- if existsIn(param, "defval") %} = {{ param.defval }}{% endif -%}
+  {%- if not loop.is_last -%}
+    ,</span>
+    {{- noop() }}<span>{% include "synopsis_indent.tmpl" -%}
+  {%- endif -%}
 {%- endfor -%}
