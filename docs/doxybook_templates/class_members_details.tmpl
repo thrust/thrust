@@ -1,42 +1,41 @@
 {%- if exists("publicTypes") -%}## Member Types
+
   {%- for child in publicTypes -%}
-    {% include "header_member_details.tmpl" %}
+    {% include "title_member.tmpl" %}
     {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
 {%- endif -%}
 {%- if exists("publicAttributes") %}## Member Variables
+
   {%- for child in publicAttributes -%}
-    {% include "header_member_details.tmpl" %}
+    {% include "title_member.tmpl" %}
     {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
 {%- endif -%}
 {%- if exists("publicFunctions") %}## Member Functions
+
   {%- for child in publicFunctions -%}
-    {% include "header_member_details.tmpl" %}
+    {% include "title_member.tmpl" %}
     {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
 {%- endif -%}
 {%- if exists("protectedTypes") -%}## Protected Member Types
-{% endif -%}
-{%- if exists("protectedTypes") -%}
-  {%- for child in protectedTypes -%}
-    {% include "header_member_details.tmpl" %}
+  {%- for child in publicTypes -%}
+    {% include "title_member.tmpl" %}
     {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
-{%- endif -%}
-{%- if exists("protectedAttributes") %}## Protected Member Variables
 {% endif -%}
-{%- if exists("protectedAttributes") -%}
+{%- if exists("protectedAttributes") -%}## Protected Member Variables
+
   {%- for child in protectedAttributes -%}
-    {% include "header_member_details.tmpl" %}
+    {% include "title_member.tmpl" %}
     {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
 {%- endif -%}
-{%- if exists("protectedFunctions") %}## Protected Member Functions
-{% endif -%}
-{%- if exists("protectedFunctions") -%}
+{%- if exists("protectedFunctions") -%}## Protected Member Functions
+
   {%- for child in protectedFunctions -%}
-    {% include "header_member_details.tmpl" %}
+    {% include "title_member.tmpl" %}
     {{- render("member_details.tmpl", child) -}}
   {%- endfor %}
 {%- endif -%}
