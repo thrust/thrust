@@ -1,28 +1,28 @@
-{%- if kind == "enum" -%}
+{%- if exists("type") and type in ["class", "struct"] -%}
+  <code class="doxybook">
+  {%- include "synopsis_class.tmpl" -%}
+  </code>
+{%- else if kind == "enum" -%}
   {%- include "table_header_enum.tmpl" -%}
   {%- for enumerator in enumvalues -%}{{- render("table_row_enum.tmpl", enumerator) -}}
   {%- endfor %}
-{% endif -%}
-{%- if kind in ["typedef", "using"] -%}
+{%- else if kind in ["typedef", "using"] -%}
   <code class="doxybook">
-  {% include "synopsis_template_parameters.tmpl" -%}
+  {%- include "synopsis_template_parameters.tmpl" -%}
   <span>{%- include "synopsis_kind.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- noop() -}}
   </code>
-{% endif -%}
-{%- if kind in ["variable", "property"] -%}
+{%- else if kind in ["variable", "property"] -%}
   <code class="doxybook">
-  {% include "synopsis_template_parameters.tmpl" -%}
+  {%- include "synopsis_template_parameters.tmpl" -%}
   <span>{%- include "synopsis_type_and_leading_specifiers.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- noop() -}}
   </code>
-{% endif -%}
-{%- if kind in ["function", "slot", "signal", "event"] -%}
+{%- else if kind in ["function", "slot", "signal", "event"] -%}
   <code class="doxybook">
-  {% include "synopsis_template_parameters.tmpl" -%}
+  {%- include "synopsis_template_parameters.tmpl" -%}
   {% include "synopsis_function_type_and_leading_specifiers.tmpl" -%}
   <span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>{{- noop() -}}
   </code>
-{% endif -%}
-{%- if kind == "friend" -%}
+{%- else if kind == "friend" -%}
   {%- if type != "class" and type != "struct" -%}
     <code class="doxybook">
     {% include "synopsis_template_parameters.tmpl" -%}
@@ -30,8 +30,7 @@
     <span><b>{{name}}</b>({%- include "synopsis_function_parameters.tmpl" -%}){%- include "synopsis_function_trailing_specifiers.tmpl" -%};</span>{{- noop() -}}
     </code>
   {%- endif -%}
-{% endif -%}
-{%- if kind == "define" -%}
+{%- else if kind == "define" -%}
   <code class="doxybook">
   <span>{%- include "synopsis_kind.tmpl" -%}<b>{{name}}</b>{%- include "synopsis_initializer.tmpl" -%};</span>{{- noop() -}}
   </code>

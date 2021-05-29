@@ -20,14 +20,15 @@
   <br>
 {%- endif -%}
 {%- include "synopsis_template_parameters.tmpl" -%}
-<span>{%- include "synopsis_kind_abbreviated.tmpl" -%}{{name}} {</span>
+<span>{%- include "synopsis_kind.tmpl" -%}{% include "name_qualified.tmpl" %} {</span>
 {%- set synopsis_indent_width = 2 -%}
+{%- set names_qualified = false -%}
 {%- if default(has_public_members, false) -%}
   <span>public:</span>{{- noop() -}}
 {%- endif -%}
 {%- if exists("publicTypes") -%}
   {%- for child in publicTypes -%}
-    {%- include "synopsis_member_type.tmpl" -%}
+    {%- include "synopsis_type.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -35,14 +36,14 @@
   {%- if existsIn(base, "publicTypes") -%}
     {%- for child in base.publicTypes -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_type.tmpl" -%}
+      {%- include "synopsis_type.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
 {%- endfor -%}{%- endif -%}
 {%- if exists("publicClasses") -%}
   {%- for child in publicClasses -%}
-    {%- include "synopsis_member_class.tmpl" -%}
+    {%- include "synopsis_class.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -50,7 +51,7 @@
   {%- if existsIn(base, "publicClasses") -%}
     {%- for child in base.publicClasses -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_class.tmpl" -%}
+      {%- include "synopsis_class.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
@@ -76,7 +77,7 @@
 {%- endfor -%}{%- endif -%}
 {%- if exists("publicAttributes") -%}
   {%- for child in publicAttributes -%}
-    {%- include "synopsis_member_variable.tmpl" -%}
+    {%- include "synopsis_variable.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -84,14 +85,14 @@
   {%- if existsIn(base, "publicAttributes") -%}
     {%- for child in base.publicAttributes -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_variable.tmpl" -%}
+      {%- include "synopsis_variable.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
 {%- endfor -%}{%- endif -%}
 {%- if exists("publicFunctions") -%}
   {%- for child in publicFunctions -%}
-    {%- include "synopsis_member_function.tmpl" -%}
+    {%- include "synopsis_function.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -99,7 +100,7 @@
   {%- if existsIn(base, "publicFunctions") -%}
     {%- for child in base.publicFunctions -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_function.tmpl" -%}
+      {%- include "synopsis_function.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
@@ -135,7 +136,7 @@
 {%- endif -%}
 {%- if exists("protectedTypes") -%}
   {%- for child in protectedTypes -%}
-    {%- include "synopsis_member_type.tmpl" -%}
+    {%- include "synopsis_type.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -143,14 +144,14 @@
   {%- if existsIn(base, "protectedTypes") -%}
     {%- for child in base.protectedTypes -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_type.tmpl" -%}
+      {%- include "synopsis_type.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
 {%- endfor -%}{%- endif -%}
 {%- if exists("protectedClasses") -%}
   {%- for child in protectedClasses -%}
-    {%- include "synopsis_member_class.tmpl" -%}
+    {%- include "synopsis_class.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -158,14 +159,14 @@
   {%- if existsIn(base, "protectedClasses") -%}
     {%- for child in base.protectedClasses -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_class.tmpl" -%}
+      {%- include "synopsis_class.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
 {%- endfor -%}{%- endif -%}
 {%- if exists("protectedAttributes") -%}
   {%- for child in protectedAttributes -%}
-    {%- include "synopsis_member_variable.tmpl" -%}
+    {%- include "synopsis_variable.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -173,14 +174,14 @@
   {%- if existsIn(base, "protectedAttributes") -%}
     {%- for child in base.protectedAttributes -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_variable.tmpl" -%}
+      {%- include "synopsis_variable.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}
 {%- endfor -%}{%- endif -%}
 {%- if exists("protectedFunctions") -%}
   {%- for child in protectedFunctions -%}
-    {%- include "synopsis_member_function.tmpl" -%}
+    {%- include "synopsis_function.tmpl" -%}
     {%- set synopsis_needs_leading_line_break = true -%}
   {%- endfor -%}
 {%- endif -%}
@@ -188,7 +189,7 @@
   {%- if existsIn(base, "protectedFunctions") -%}
     {%- for child in base.protectedFunctions -%}
       {{- render("synopsis_inherited_from.tmpl", base) -}}
-      {%- include "synopsis_member_function.tmpl" -%}
+      {%- include "synopsis_function.tmpl" -%}
       {%- set synopsis_needs_leading_line_break = true -%}
     {%- endfor -%}
   {%- endif -%}

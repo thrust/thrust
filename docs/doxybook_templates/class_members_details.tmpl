@@ -1,3 +1,10 @@
+{%- if exists("publicClasses") -%}## Member Classes
+
+  {%- for child in publicClasses -%}
+    {% include "title_member.tmpl" %}
+    {{- render("member_details.tmpl", child) -}}
+  {%- endfor %}
+{%- endif -%}
 {%- if exists("publicTypes") -%}## Member Types
 
   {%- for child in publicTypes -%}

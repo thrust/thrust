@@ -117,8 +117,8 @@ protected:
   auto test_protected_member_function();
 };
 
-/*! \brief \c test_class is a derived class intended to exercise and test
- *  Doxybook rendering.
+/*! \brief \c test_derived_class is a derived class intended to exercise and
+ *  test Doxybook rendering.
  */
 class test_derived_class : test_class<int, double>
 {

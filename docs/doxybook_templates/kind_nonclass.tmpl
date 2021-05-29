@@ -1,4 +1,8 @@
 {% include "frontmatter.tmpl" -%}
 {%- if hasDetails %}{% include "details.tmpl" -%}{%- endif -%}
-{% include "nonclass_members.tmpl" -%}
+{% if kind == "namespace" -%}
+  {%- include "namespace_members.tmpl" -%}
+{%- else -%}
+  {%- include "nonclass_members.tmpl" -%}
+{%- endif -%}
 {% include "nonclass_members_details.tmpl" -%}
