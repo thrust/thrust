@@ -3,7 +3,7 @@
   {{- param.type -}}
   {%- if not isEmpty(param.name) %} {% endif -%}
   {{- param.name -}}
-  {%- if existsIn(param, "defval") %} = {{ param.defval }}{% endif -%}
+  {%- if existsIn(param, "defvalPlain") %} = {{ escape(param.defvalPlain) }}{% endif -%}
   {%- if not loop.is_last -%}
     ,</span>
     {{- noop() }}<span>{% include "synopsis_indent.tmpl" -%}

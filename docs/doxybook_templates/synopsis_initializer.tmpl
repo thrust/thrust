@@ -1,3 +1,3 @@
-{%- if kind == "using" %} = {{ type -}}
-{%- else if exists("initializer") %} {{ initializer -}}
+{%- if kind == "using" %} = {{ escape(type) -}}
+{%- else if exists("initializer") %} {{ escape(initializer) -}}
 {%- endif -%}
