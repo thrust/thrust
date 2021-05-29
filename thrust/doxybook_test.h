@@ -183,6 +183,20 @@ template <typename T, typename U>
 auto test_nested_function(T t, U u) noexcept(noexcept(t + u)) -> decltype(t + u)
 { return t + u; }
 
+/*! \brief \c test_struct is a struct intended to exercise and test Doxybook
+ *  rendering.
+ */
+template <typename Z>
+struct test_struct
+{
+  test_struct& operator=(test_struct const&) = default;
+
+  /*! \brief \c operator< is a function intended to exercise and test Doxybook
+   *  rendering.
+   */
+  bool operator<(test_struct const& t);
+};
+
 } // namespace test_namespace
 
 /*! \brief \c THRUST_TEST_MACRO is a macro intended to exercise and test
