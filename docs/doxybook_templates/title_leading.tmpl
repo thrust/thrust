@@ -1,4 +1,4 @@
 <h3 id="{{ child.kind }}-{{ child.name }}">
-{%- if exists("type") and type in ["class", "struct"] -%}
+{%- if existsIn(child, "kind") and child.kind in ["class", "struct"] -%}
   <a href="{{ child.url }}">{{ noop() -}}
 {%- endif -%}
