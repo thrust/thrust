@@ -30,8 +30,7 @@
 #include <limits>
 #include <stdexcept>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 /** \addtogroup memory_resources Memory Resources
  *  \ingroup memory_management_classes
@@ -140,5 +139,4 @@ public:
 /*! \}
  */
 
-} // end thrust
-
+THRUST_NAMESPACE_END

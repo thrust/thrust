@@ -16,8 +16,7 @@
 
 #pragma once
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 // define Boost's traversal tags
 struct no_traversal_tag {};
@@ -37,5 +36,5 @@ struct bidirectional_traversal_tag
 struct random_access_traversal_tag
   : bidirectional_traversal_tag {};
 
-} // end thrust
+THRUST_NAMESPACE_END
 

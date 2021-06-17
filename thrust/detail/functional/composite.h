@@ -28,8 +28,7 @@
 #include <thrust/detail/functional/actor.h>
 #include <thrust/tuple.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace detail
 {
 namespace functional
@@ -159,5 +158,5 @@ __host__ __device__
 
 } // end functional
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 

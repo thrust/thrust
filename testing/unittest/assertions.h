@@ -99,15 +99,15 @@ double const DEFAULT_ABSOLUTE_TOL = 1e-4;
 template<typename T>
   struct value_type
 {
-  typedef typename thrust::detail::remove_const<
-    typename thrust::detail::remove_reference<
+  typedef typename THRUST_NS_QUALIFIER::detail::remove_const<
+    typename THRUST_NS_QUALIFIER::detail::remove_reference<
       T
     >::type
   >::type type;
 };
 
 template<typename T>
-  struct value_type< thrust::device_reference<T> >
+  struct value_type< THRUST_NS_QUALIFIER::device_reference<T> >
 {
   typedef typename value_type<T>::type type;
 };
@@ -328,7 +328,7 @@ void assert_almost_equal(T1 a, T2 b,
 
 
 template <typename T1, typename T2>
-void assert_almost_equal(thrust::complex<T1> a, thrust::complex<T2> b,
+void assert_almost_equal(THRUST_NS_QUALIFIER::complex<T1> a, THRUST_NS_QUALIFIER::complex<T2> b,
                          const std::string& filename = "unknown", int lineno = -1,
                          double a_tol = DEFAULT_ABSOLUTE_TOL, double r_tol = DEFAULT_RELATIVE_TOL)
 
@@ -344,7 +344,7 @@ void assert_almost_equal(thrust::complex<T1> a, thrust::complex<T2> b,
 
 
 template <typename T1, typename T2>
-  void assert_almost_equal(const thrust::complex<T1>& a, const std::complex<T2>& b,
+  void assert_almost_equal(const THRUST_NS_QUALIFIER::complex<T1>& a, const std::complex<T2>& b,
                          const std::string& filename = "unknown", int lineno = -1,
                          double a_tol = DEFAULT_ABSOLUTE_TOL, double r_tol = DEFAULT_RELATIVE_TOL)
 
@@ -371,12 +371,12 @@ class almost_equal_to
 
 
 template <typename T>
-class almost_equal_to<thrust::complex<T> >
+class almost_equal_to<THRUST_NS_QUALIFIER::complex<T> >
 {
     public:
         double a_tol, r_tol;
         almost_equal_to(double _a_tol = DEFAULT_ABSOLUTE_TOL, double _r_tol = DEFAULT_RELATIVE_TOL) : a_tol(_a_tol), r_tol(_r_tol) {}
-        bool operator()(const thrust::complex<T>& a, const thrust::complex<T>& b) const {
+        bool operator()(const THRUST_NS_QUALIFIER::complex<T>& a, const THRUST_NS_QUALIFIER::complex<T>& b) const {
             return almost_equal((double) a.real(), (double) b.real(), a_tol, r_tol)
                 && almost_equal((double) a.imag(), (double) b.imag(), a_tol, r_tol);
         }
@@ -389,15 +389,15 @@ template <typename ForwardIterator1, typename ForwardIterator2, typename BinaryP
 void assert_equal(ForwardIterator1 first1, ForwardIterator1 last1, ForwardIterator2 first2, ForwardIterator2 last2, BinaryPredicate op,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    typedef typename thrust::iterator_difference<ForwardIterator1>::type difference_type;
-    typedef typename thrust::iterator_value<ForwardIterator1>::type InputType;
+    typedef typename THRUST_NS_QUALIFIER::iterator_difference<ForwardIterator1>::type difference_type;
+    typedef typename THRUST_NS_QUALIFIER::iterator_value<ForwardIterator1>::type InputType;
 
     bool failure = false;
 
-    difference_type length1 = thrust::distance(first1, last1);
-    difference_type length2 = thrust::distance(first2, last2);
+    difference_type length1 = THRUST_NS_QUALIFIER::distance(first1, last1);
+    difference_type length2 = THRUST_NS_QUALIFIER::distance(first2, last2);
 
-    difference_type min_length = thrust::min(length1, length2);
+    difference_type min_length = THRUST_NS_QUALIFIER::min(length1, length2);
 
     unittest::UnitTestFailure f;
     f << "[" << filename << ":" << lineno << "] ";
@@ -463,8 +463,8 @@ template <typename ForwardIterator1, typename ForwardIterator2>
 void assert_equal(ForwardIterator1 first1, ForwardIterator1 last1, ForwardIterator2 first2, ForwardIterator2 last2,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    typedef typename thrust::iterator_traits<ForwardIterator1>::value_type InputType;
-    assert_equal(first1, last1, first2, last2, thrust::equal_to<InputType>(), filename, lineno);
+    typedef typename THRUST_NS_QUALIFIER::iterator_traits<ForwardIterator1>::value_type InputType;
+    assert_equal(first1, last1, first2, last2, THRUST_NS_QUALIFIER::equal_to<InputType>(), filename, lineno);
 }
 
 
@@ -473,76 +473,85 @@ void assert_almost_equal(ForwardIterator1 first1, ForwardIterator1 last1, Forwar
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
-    typedef typename thrust::iterator_traits<ForwardIterator1>::value_type InputType;
+    typedef typename THRUST_NS_QUALIFIER::iterator_traits<ForwardIterator1>::value_type InputType;
     assert_equal(first1, last1, first2, last2, almost_equal_to<InputType>(a_tol, r_tol), filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::host_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::host_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::host_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
     assert_equal(A.begin(), A.end(), B.begin(), B.end(), filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::device_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::host_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::device_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    thrust::host_vector<T,Alloc1> B_host = B;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc1> B_host = B;
     assert_equal(A, B_host, filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::device_vector<T,Alloc1>& A, const thrust::host_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::device_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::host_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    thrust::host_vector<T,Alloc2> A_host = A;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc2> A_host = A;
     assert_equal(A_host, B, filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::device_vector<T,Alloc1>& A, const thrust::device_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::device_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::device_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    thrust::host_vector<T> A_host = A;
-    thrust::host_vector<T> B_host = B;
+    THRUST_NS_QUALIFIER::host_vector<T> A_host = A;
+    THRUST_NS_QUALIFIER::host_vector<T> B_host = B;
     assert_equal(A_host, B_host, filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::universal_vector<T,Alloc1>& A, const thrust::universal_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::universal_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::universal_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
     assert_equal(A.begin(), A.end(), B.begin(), B.end(), filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::universal_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::host_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::universal_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
     assert_equal(A.begin(), A.end(), B.begin(), B.end(), filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::universal_vector<T,Alloc1>& A, const thrust::host_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::universal_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::host_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
     assert_equal(A.begin(), A.end(), B.begin(), B.end(), filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::device_vector<T,Alloc1>& A, const thrust::universal_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::device_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::universal_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    thrust::host_vector<T,Alloc1> A_host = A;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc1> A_host = A;
     assert_equal(A_host, B, filename, lineno);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_equal(const thrust::universal_vector<T,Alloc1>& A, const thrust::device_vector<T,Alloc2>& B,
+void assert_equal(const THRUST_NS_QUALIFIER::universal_vector<T,Alloc1>& A,
+                  const THRUST_NS_QUALIFIER::device_vector<T,Alloc2>& B,
                   const std::string& filename = "unknown", int lineno = -1)
 {
-    thrust::host_vector<T,Alloc1> B_host = B;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc1> B_host = B;
     assert_equal(A, B_host, filename, lineno);
 }
 
@@ -554,7 +563,8 @@ void assert_equal(const std::vector<T,Alloc1>& A, const std::vector<T,Alloc2>& B
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::host_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::host_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::host_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
@@ -562,35 +572,39 @@ void assert_almost_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::h
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::device_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::host_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::device_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
-    thrust::host_vector<T,Alloc1> B_host = B;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc1> B_host = B;
     assert_almost_equal(A, B_host, filename, lineno, a_tol, r_tol);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::device_vector<T,Alloc1>& A, const thrust::host_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::device_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::host_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
-    thrust::host_vector<T,Alloc2> A_host = A;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc2> A_host = A;
     assert_almost_equal(A_host, B, filename, lineno, a_tol, r_tol);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::device_vector<T,Alloc1>& A, const thrust::device_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::device_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::device_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
-    thrust::host_vector<T> A_host = A;
-    thrust::host_vector<T> B_host = B;
+    THRUST_NS_QUALIFIER::host_vector<T> A_host = A;
+    THRUST_NS_QUALIFIER::host_vector<T> B_host = B;
     assert_almost_equal(A_host, B_host, filename, lineno, a_tol, r_tol);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::universal_vector<T,Alloc1>& A, const thrust::universal_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::universal_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::universal_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
@@ -598,7 +612,8 @@ void assert_almost_equal(const thrust::universal_vector<T,Alloc1>& A, const thru
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::universal_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::host_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::universal_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
@@ -606,7 +621,8 @@ void assert_almost_equal(const thrust::host_vector<T,Alloc1>& A, const thrust::u
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::universal_vector<T,Alloc1>& A, const thrust::host_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::universal_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::host_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
@@ -614,20 +630,22 @@ void assert_almost_equal(const thrust::universal_vector<T,Alloc1>& A, const thru
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::device_vector<T,Alloc1>& A, const thrust::universal_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::device_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::universal_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
-    thrust::host_vector<T,Alloc1> A_host = A;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc1> A_host = A;
     assert_almost_equal(A_host, B, filename, lineno, a_tol, r_tol);
 }
 
 template <typename T, typename Alloc1, typename Alloc2>
-void assert_almost_equal(const thrust::universal_vector<T,Alloc1>& A, const thrust::device_vector<T,Alloc2>& B,
+void assert_almost_equal(const THRUST_NS_QUALIFIER::universal_vector<T,Alloc1>& A,
+                         const THRUST_NS_QUALIFIER::device_vector<T,Alloc2>& B,
                          const std::string& filename = "unknown", int lineno = -1,
                          const double a_tol = DEFAULT_ABSOLUTE_TOL, const double r_tol = DEFAULT_RELATIVE_TOL)
 {
-    thrust::host_vector<T,Alloc1> B_host = B;
+    THRUST_NS_QUALIFIER::host_vector<T,Alloc1> B_host = B;
     assert_almost_equal(A, B_host, filename, lineno, a_tol, r_tol);
 }
 

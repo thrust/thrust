@@ -16,8 +16,7 @@
 
 #include <thrust/random/uniform_real_distribution.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace random
 {
@@ -227,5 +226,5 @@ operator>>(std::basic_istream<CharT,Traits> &is,
 
 } // end random
 
-} // end thrust
+THRUST_NAMESPACE_END
 

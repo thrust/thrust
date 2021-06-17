@@ -21,8 +21,7 @@
 
 // functions to handle memory alignment
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace detail
 {
 namespace util
@@ -55,5 +54,5 @@ bool is_aligned(T * ptr, detail::uintptr_t bytes = sizeof(T))
 
 } // end namespace util
 } // end namespace detail
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

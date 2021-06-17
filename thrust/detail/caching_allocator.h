@@ -21,8 +21,8 @@
 #include <thrust/mr/new.h>
 #include <thrust/mr/device_memory_resource.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
+
 namespace detail
 {
 inline
@@ -42,4 +42,5 @@ thrust::mr::allocator<
     };
 }
 }
-}
+
+THRUST_NAMESPACE_END

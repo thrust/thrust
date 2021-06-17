@@ -29,8 +29,8 @@
 #include <thrust/detail/raw_reference_cast.h>
 #include <thrust/detail/memory_wrapper.h> // for ::new
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
+
 namespace detail
 {
 
@@ -553,5 +553,5 @@ template<typename Compare>
 
 
 } // end namespace detail
-} // end namespace thrust
 
+THRUST_NAMESPACE_END

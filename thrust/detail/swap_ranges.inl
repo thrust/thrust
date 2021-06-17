@@ -25,8 +25,7 @@
 #include <thrust/system/detail/generic/swap_ranges.h>
 #include <thrust/system/detail/adl/swap_ranges.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 
 __thrust_exec_check_disable__
@@ -62,5 +61,5 @@ template<typename ForwardIterator1,
 } // end swap_ranges()
 
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

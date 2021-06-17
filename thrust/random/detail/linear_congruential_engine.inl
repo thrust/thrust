@@ -18,8 +18,7 @@
 #include <thrust/random/detail/mod.h>
 #include <thrust/random/detail/random_core_access.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace random
 {
@@ -165,5 +164,5 @@ operator>>(std::basic_istream<CharT,Traits> &is,
 
 } // end random
 
-} // end thrust
+THRUST_NAMESPACE_END
 

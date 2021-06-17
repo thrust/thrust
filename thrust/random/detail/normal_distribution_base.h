@@ -29,8 +29,7 @@
 #include <limits>
 #include <cmath>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace random
 {
 namespace detail
@@ -145,5 +144,5 @@ template<typename RealType>
 
 } // end detail
 } // end random
-} // end thrust
+THRUST_NAMESPACE_END
 

@@ -19,8 +19,7 @@
 
 #include <thrust/system/system_error.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace system
 {
@@ -107,5 +106,5 @@ const char *system_error
 
 } // end system
 
-} // end thrust
+THRUST_NAMESPACE_END
 

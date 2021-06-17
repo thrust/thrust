@@ -20,8 +20,8 @@
 #include <stdint.h>
 #endif
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
+
 namespace detail
 {
 
@@ -75,5 +75,5 @@ typedef divine_intptr_t<>::type   intptr_t;
 typedef divine_uintptr_t<>::type  uintptr_t;
 
 } // end detail
-} // end thrust
 
+THRUST_NAMESPACE_END

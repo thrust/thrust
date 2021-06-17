@@ -30,8 +30,7 @@
 #include <thrust/system/cpp/detail/execution_policy.h>
 #include <thrust/system/cuda/detail/execution_policy.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
   template <class Sys1, class Sys2>
@@ -340,5 +339,5 @@ namespace cuda_cub {
   }
 
 } // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

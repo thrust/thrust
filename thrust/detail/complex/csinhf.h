@@ -51,7 +51,7 @@
 #include <thrust/complex.h>
 #include <thrust/detail/complex/math_private.h>
 
-namespace thrust{
+THRUST_NAMESPACE_BEGIN
 namespace detail{
 namespace complex{		      	
 
@@ -139,4 +139,4 @@ inline complex<float> sinh(const complex<float>& z){
   return detail::complex::csinhf(z);
 }
 
-} // namespace thrust
+THRUST_NAMESPACE_END

@@ -34,8 +34,7 @@
 #include <thrust/detail/tuple.inl>
 #include <thrust/pair.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 /*! \addtogroup utility
  *  \{
@@ -581,5 +580,4 @@ bool operator>(const null_type&, const null_type&);
 /*! \} // utility
  */
 
-} // end thrust
-
+THRUST_NAMESPACE_END

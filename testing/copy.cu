@@ -733,15 +733,14 @@ struct only_set_when_expected_it
     }
 };
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace detail
 {
 // We need this type to pass as a non-const ref for unary_transform_functor
 // to compile:
 template <>
 struct is_non_const_reference<only_set_when_expected_it> : thrust::true_type {};
-}
+} // end namespace detail
 
 template<>
 struct iterator_traits<only_set_when_expected_it>
@@ -750,7 +749,7 @@ struct iterator_traits<only_set_when_expected_it>
     typedef only_set_when_expected_it reference;
     typedef thrust::random_access_device_iterator_tag iterator_category;
 };
-}
+THRUST_NAMESPACE_END
 
 void TestCopyWithBigIndexesHelper(int magnitude)
 {

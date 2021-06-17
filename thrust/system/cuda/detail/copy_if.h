@@ -43,8 +43,7 @@
 
 #include <cub/util_math.cuh>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 // XXX declare generic copy_if interface
 // to avoid circulular dependency from thrust/copy.h
 template <typename DerivedPolicy, typename InputIterator, typename OutputIterator, typename Predicate>
@@ -72,9 +71,9 @@ namespace __copy_if {
 
   template <int                     _BLOCK_THREADS,
             int                     _ITEMS_PER_THREAD = 1,
-            cub::BlockLoadAlgorithm _LOAD_ALGORITHM   = cub::BLOCK_LOAD_DIRECT,
-            cub::CacheLoadModifier  _LOAD_MODIFIER    = cub::LOAD_LDG,
-            cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
+            CUB_NS_QUALIFIER::BlockLoadAlgorithm _LOAD_ALGORITHM   = CUB_NS_QUALIFIER::BLOCK_LOAD_DIRECT,
+            CUB_NS_QUALIFIER::CacheLoadModifier  _LOAD_MODIFIER    = CUB_NS_QUALIFIER::LOAD_LDG,
+            CUB_NS_QUALIFIER::BlockScanAlgorithm _SCAN_ALGORITHM   = CUB_NS_QUALIFIER::BLOCK_SCAN_WARP_SCANS>
   struct PtxPolicy
   {
     enum
@@ -83,9 +82,9 @@ namespace __copy_if {
       ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
       ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD,
     };
-    static const cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
-    static const cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+    static const CUB_NS_QUALIFIER::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static const CUB_NS_QUALIFIER::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
+    static const CUB_NS_QUALIFIER::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
   };    // struct PtxPolicy
 
   template<class, class>
@@ -104,9 +103,9 @@ namespace __copy_if {
 
     typedef PtxPolicy<128,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::BLOCK_SCAN_WARP_SCANS>
         type;
   };    // Tuning<350>
 
@@ -124,9 +123,9 @@ namespace __copy_if {
 
     typedef PtxPolicy<128,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::BLOCK_SCAN_WARP_SCANS>
         type;
   };    // Tuning<350>
 
@@ -143,9 +142,9 @@ namespace __copy_if {
 
     typedef PtxPolicy<128,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_DEFAULT,
+                      CUB_NS_QUALIFIER::BLOCK_SCAN_WARP_SCANS>
         type;
   };    // Tuning<300>
 
@@ -162,7 +161,7 @@ namespace __copy_if {
     typedef typename iterator_traits<ItemsIt>::value_type   item_type;
     typedef typename iterator_traits<StencilIt>::value_type stencil_type;
 
-    typedef cub::ScanTileState<Size> ScanTileState;
+    typedef CUB_NS_QUALIFIER::ScanTileState<Size> ScanTileState;
 
     template <class Arch>
     struct PtxPlan : Tuning<Arch, item_type>::type
@@ -175,13 +174,13 @@ namespace __copy_if {
       typedef typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type   BlockLoadItems;
       typedef typename core::BlockLoad<PtxPlan, StencilLoadIt>::type BlockLoadStencil;
 
-      typedef cub::TilePrefixCallbackOp<Size,
-                                        cub::Sum,
+      typedef CUB_NS_QUALIFIER::TilePrefixCallbackOp<Size,
+                                        CUB_NS_QUALIFIER::Sum,
                                         ScanTileState,
                                         Arch::ver>
           TilePrefixCallback;
 
-      typedef cub::BlockScan<Size,
+      typedef CUB_NS_QUALIFIER::BlockScan<Size,
                              PtxPlan::BLOCK_THREADS,
                              PtxPlan::SCAN_ALGORITHM,
                              1,
@@ -445,7 +444,7 @@ namespace __copy_if {
         {
           TilePrefixCallback prefix_cb(tile_state,
                                        storage.scan_storage.prefix,
-                                       cub::Sum(),
+                                       CUB_NS_QUALIFIER::Sum(),
                                        tile_idx);
           BlockScan(storage.scan_storage.scan)
               .ExclusiveSum(selection_flags,
@@ -638,7 +637,7 @@ namespace __copy_if {
     typename get_plan<copy_if_agent>::type copy_if_plan = copy_if_agent::get_plan(stream);
 
     int tile_size = copy_if_plan.items_per_tile;
-    size_t num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+    size_t num_tiles = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items, tile_size);
 
     size_t vshmem_size = core::vshmem_size(copy_if_plan.shared_memory_size,
                                            num_tiles);
@@ -653,7 +652,7 @@ namespace __copy_if {
 
 
     void* allocations[2] = {NULL, NULL};
-    status = cub::AliasTemporaries(d_temp_storage,
+    status = CUB_NS_QUALIFIER::AliasTemporaries(d_temp_storage,
                                    temp_storage_bytes,
                                    allocations,
                                    allocation_sizes);
@@ -853,7 +852,7 @@ copy_if(execution_policy<Derived> &policy,
 }    // func copy_if
 
 }    // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/copy.h>
 #endif

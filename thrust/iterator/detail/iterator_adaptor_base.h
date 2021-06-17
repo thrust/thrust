@@ -21,8 +21,7 @@
 #include <thrust/detail/use_default.h>
 #include <thrust/iterator/iterator_facade.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 
 // forward declaration of iterator_adaptor for iterator_adaptor_base below
@@ -107,5 +106,5 @@ template<typename Derived,
 
 
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 

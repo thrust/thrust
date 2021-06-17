@@ -36,8 +36,7 @@
 #include <cub/block/block_store.cuh>
 #include <cub/block/block_scan.cuh>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace cuda_cub {
 namespace core {
@@ -419,7 +418,7 @@ namespace core {
 #ifdef __CUDA_ARCH__
     plan = get_agent_plan_dev<Agent>();
 #else
-    static cub::Mutex mutex;
+    static CUB_NS_QUALIFIER::Mutex mutex;
     bool lock = false;
     if (d_ptr == 0)
     {
@@ -532,10 +531,10 @@ namespace core {
 
     typedef typename thrust::detail::conditional<
         is_contiguous_iterator<It>::value,
-        cub::CacheModifiedInputIterator<PtxPlan::LOAD_MODIFIER,
-                                        value_type,
-                                        size_type>,
-        It>::type type;
+        CUB_NS_QUALIFIER::CacheModifiedInputIterator<PtxPlan::LOAD_MODIFIER,
+                                                     value_type,
+                                                     size_type>,
+                                                     It>::type type;
   };    // struct Iterator
 
   template <class PtxPlan, class It>
@@ -574,16 +573,13 @@ namespace core {
             class T    = typename iterator_traits<It>::value_type>
   struct BlockLoad
   {
-    typedef cub::BlockLoad<T,
-                           PtxPlan::BLOCK_THREADS,
-                           PtxPlan::ITEMS_PER_THREAD,
-                           PtxPlan::LOAD_ALGORITHM,
-                           1,
-                           1,
-                           get_arch<PtxPlan>::type::ver>
-
-
-        type;
+    using type = CUB_NS_QUALIFIER::BlockLoad<T,
+                                             PtxPlan::BLOCK_THREADS,
+                                             PtxPlan::ITEMS_PER_THREAD,
+                                             PtxPlan::LOAD_ALGORITHM,
+                                             1,
+                                             1,
+                                             get_arch<PtxPlan>::type::ver>;
   };
 
   // BlockStore
@@ -594,16 +590,16 @@ namespace core {
             class T = typename iterator_traits<It>::value_type>
   struct BlockStore
   {
-    typedef cub::BlockStore<T,
-                            PtxPlan::BLOCK_THREADS,
-                            PtxPlan::ITEMS_PER_THREAD,
-                            PtxPlan::STORE_ALGORITHM,
-                            1,
-                            1,
-                            get_arch<PtxPlan>::type::ver>
-        type;
+    using type = CUB_NS_QUALIFIER::BlockStore<T,
+                                              PtxPlan::BLOCK_THREADS,
+                                              PtxPlan::ITEMS_PER_THREAD,
+                                              PtxPlan::STORE_ALGORITHM,
+                                              1,
+                                              1,
+                                              get_arch<PtxPlan>::type::ver>;
   };
-  // cuda_otional
+
+  // cuda_optional
   // --------------
   // used for function that return cudaError_t along with the result
   //
@@ -636,25 +632,25 @@ namespace core {
   get_ptx_version()
   {
     int ptx_version = 0;
-    cudaError_t status = cub::PtxVersion(ptx_version);
+    cudaError_t status = CUB_NS_QUALIFIER::PtxVersion(ptx_version);
     return cuda_optional<int>(ptx_version, status);
   }
 
   cudaError_t THRUST_RUNTIME_FUNCTION
   sync_stream(cudaStream_t stream)
   {
-    return cub::SyncStream(stream);
+    return CUB_NS_QUALIFIER::SyncStream(stream);
   }
 
   inline void __device__ sync_threadblock()
   {
-    cub::CTA_SYNC();
+    CUB_NS_QUALIFIER::CTA_SYNC();
   }
 
 #define CUDA_CUB_RET_IF_FAIL(e) \
   {                             \
     auto const error = (e);     \
-    if (cub::Debug(error, __FILE__, __LINE__)) return error; \
+    if (CUB_NS_QUALIFIER::Debug(error, __FILE__, __LINE__)) return error; \
   }
 
   // uninitialized
@@ -664,7 +660,7 @@ namespace core {
   template <class T>
   struct uninitialized
   {
-    typedef typename cub::UnitWord<T>::DeviceWord DeviceWord;
+    typedef typename CUB_NS_QUALIFIER::UnitWord<T>::DeviceWord DeviceWord;
 
     enum
     {
@@ -756,10 +752,10 @@ namespace core {
                 void* (&allocations)[ALLOCATIONS],
                 size_t (&allocation_sizes)[ALLOCATIONS])
   {
-    return cub::AliasTemporaries(storage_ptr,
-                                 storage_size,
-                                 allocations,
-                                 allocation_sizes);
+    return CUB_NS_QUALIFIER::AliasTemporaries(storage_ptr,
+                                              storage_size,
+                                              allocations,
+                                              allocation_sizes);
   }
 
 
@@ -770,4 +766,4 @@ using core::sm35;
 using core::sm30;
 } // namespace cuda_
 
-} // end namespace thrust
+THRUST_NAMESPACE_END

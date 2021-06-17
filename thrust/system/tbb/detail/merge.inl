@@ -22,8 +22,7 @@
 #include <thrust/detail/seq.h>
 #include <tbb/parallel_for.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace tbb
@@ -282,5 +281,5 @@ thrust::pair<OutputIterator1,OutputIterator2>
 } // end namespace detail
 } // end namespace tbb
 } // end namespace system
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

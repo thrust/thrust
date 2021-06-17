@@ -20,8 +20,7 @@
 #include <thrust/for_each.h>
 #include <thrust/detail/memory_wrapper.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace detail
 {
 namespace allocator_traits_detail
@@ -160,5 +159,5 @@ __host__ __device__
 
 
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 

@@ -29,8 +29,7 @@
 #include <thrust/detail/temporary_array.h>
 #include <thrust/type_traits/is_contiguous_iterator.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace detail
 {
@@ -91,5 +90,5 @@ struct trivial_sequence
 
 } // end namespace detail
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

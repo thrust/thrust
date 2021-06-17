@@ -25,8 +25,7 @@
 #include <thrust/system/detail/generic/transform_scan.h>
 #include <thrust/system/detail/adl/transform_scan.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 
 __thrust_exec_check_disable__
@@ -115,5 +114,5 @@ template<typename InputIterator,
 } // end transform_exclusive_scan()
 
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

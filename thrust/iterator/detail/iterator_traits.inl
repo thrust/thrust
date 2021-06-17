@@ -24,8 +24,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/type_traits/void_t.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 template<typename Iterator>
   struct iterator_value
@@ -134,5 +133,5 @@ template<typename T>
 
 
 } // end namespace detail
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

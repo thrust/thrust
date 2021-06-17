@@ -36,8 +36,7 @@
 #include <thrust/detail/function.h>
 #include <thrust/distance.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace cuda_cub {
 
@@ -105,5 +104,5 @@ namespace cuda_cub {
   }
 }    // namespace cuda_cub
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

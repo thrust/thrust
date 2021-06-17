@@ -25,8 +25,7 @@
 #include <thrust/system/detail/generic/uninitialized_fill.h>
 #include <thrust/system/detail/adl/uninitialized_fill.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 
 __thrust_exec_check_disable__
@@ -88,5 +87,5 @@ template<typename ForwardIterator,
 } // end uninitialized_fill_n()
 
 
-} // end thrust
+THRUST_NAMESPACE_END
 

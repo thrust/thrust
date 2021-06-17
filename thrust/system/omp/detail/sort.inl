@@ -30,8 +30,7 @@
 #include <thrust/detail/seq.h>
 #include <thrust/detail/temporary_array.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace omp
@@ -261,5 +260,5 @@ void stable_sort_by_key(execution_policy<DerivedPolicy> &exec,
 } // end namespace detail
 } // end namespace omp
 } // end namespace system
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

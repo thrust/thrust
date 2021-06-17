@@ -28,8 +28,7 @@
 #  include <type_traits>
 #endif
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 // forward declaration of device_reference
 template<typename T> class device_reference;
@@ -730,7 +729,7 @@ using detail::integral_constant;
 using detail::true_type;
 using detail::false_type;
 
-} // end thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/detail/type_traits/has_trivial_assign.h>
 

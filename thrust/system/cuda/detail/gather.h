@@ -31,8 +31,7 @@
 #include <thrust/system/cuda/detail/transform.h>
 #include <thrust/iterator/permutation_iterator.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 template <class Derived,
@@ -102,6 +101,6 @@ gather_if(execution_policy<Derived>& policy,
 
 
 } // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 
 #endif

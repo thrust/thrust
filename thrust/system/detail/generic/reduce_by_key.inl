@@ -35,8 +35,7 @@
 #include <thrust/scan.h>
 #include <thrust/detail/temporary_array.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace detail
@@ -193,5 +192,5 @@ __host__ __device__
 } // end namespace generic
 } // end namespace detail
 } // end namespace system
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

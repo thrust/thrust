@@ -20,8 +20,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/detail/type_traits/result_of_adaptable_function.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 template <class UnaryFunction, class Iterator, class Reference, class Value>
   class transform_iterator;
@@ -68,5 +67,5 @@ struct transform_iterator_base
 
 
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 

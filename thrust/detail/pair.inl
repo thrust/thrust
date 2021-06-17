@@ -17,8 +17,7 @@
 #include <thrust/pair.h>
 #include <thrust/detail/swap.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 template <typename T1, typename T2>
   __host__ __device__
@@ -224,6 +223,4 @@ template<unsigned int N, typename T1, typename T2>
   return detail::pair_get<N, pair<T1,T2> >()(p);
 } // end get()
 
-
-} // end thrust
-
+THRUST_NAMESPACE_END

@@ -128,7 +128,11 @@ void swap(user_swappable &x, user_swappable &y)
   y.was_swapped = false;
 }
 
-class my_system : public thrust::device_execution_policy<my_system>
+// Inheriting from classes in anonymous namespaces is not allowed.
+// The anonymous namespace tests don't use these, so just disable them:
+#ifndef THRUST_USE_ANON_NAMESPACE
+
+class my_system : public THRUST_NS_QUALIFIER::device_execution_policy<my_system>
 {
   public:
     my_system(int)
@@ -163,21 +167,23 @@ class my_system : public thrust::device_execution_policy<my_system>
     my_system();
 };
 
-struct my_tag : thrust::device_execution_policy<my_tag> {};
+struct my_tag : THRUST_NS_QUALIFIER::device_execution_policy<my_tag> {};
+
+#endif // THRUST_USE_ANON_NAMESPACE
 
 namespace unittest
 {
 
 
-using thrust::detail::int8_t;
-using thrust::detail::int16_t;
-using thrust::detail::int32_t;
-using thrust::detail::int64_t;
+using THRUST_NS_QUALIFIER::detail::int8_t;
+using THRUST_NS_QUALIFIER::detail::int16_t;
+using THRUST_NS_QUALIFIER::detail::int32_t;
+using THRUST_NS_QUALIFIER::detail::int64_t;
 
-using thrust::detail::uint8_t;
-using thrust::detail::uint16_t;
-using thrust::detail::uint32_t;
-using thrust::detail::uint64_t;
+using THRUST_NS_QUALIFIER::detail::uint8_t;
+using THRUST_NS_QUALIFIER::detail::uint16_t;
+using THRUST_NS_QUALIFIER::detail::uint32_t;
+using THRUST_NS_QUALIFIER::detail::uint64_t;
 
   
 }

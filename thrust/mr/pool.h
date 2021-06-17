@@ -31,8 +31,7 @@
 
 #include <cassert>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace mr
 {
 
@@ -501,5 +500,5 @@ public:
  */
 
 } // end mr
-} // end thrust
+THRUST_NAMESPACE_END
 

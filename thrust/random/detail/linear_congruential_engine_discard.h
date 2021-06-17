@@ -19,8 +19,7 @@
 #include <thrust/detail/cstdint.h>
 #include <thrust/random/detail/mod.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace random
 {
@@ -103,5 +102,5 @@ struct linear_congruential_engine_discard
 
 } // end random
 
-} // end thrust
+THRUST_NAMESPACE_END
 

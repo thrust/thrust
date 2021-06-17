@@ -23,9 +23,7 @@
 #include <thrust/system/detail/generic/distance.h>
 #include <thrust/iterator/iterator_traits.h>
 
-namespace thrust
-{
-
+THRUST_NAMESPACE_BEGIN
 
 __thrust_exec_check_disable__
 template<typename InputIterator>
@@ -36,6 +34,4 @@ inline __host__ __device__
   return thrust::system::detail::generic::distance(first, last);
 } // end distance()
 
-
-} // end namespace thrust
-
+THRUST_NAMESPACE_END

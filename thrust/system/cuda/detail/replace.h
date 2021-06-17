@@ -31,8 +31,7 @@
 #include <thrust/system/cuda/detail/transform.h>
 #include <thrust/detail/internal_functional.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
   namespace __replace
@@ -209,5 +208,5 @@ replace_copy(execution_policy<Derived> &policy,
 }
 
 }    // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

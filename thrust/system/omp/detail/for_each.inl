@@ -27,8 +27,7 @@
 #include <thrust/distance.h>
 #include <thrust/for_each.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace omp
@@ -96,5 +95,5 @@ template<typename DerivedPolicy,
 } // end namespace detail
 } // end namespace omp
 } // end namespace system
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

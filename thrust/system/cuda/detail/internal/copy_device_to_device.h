@@ -34,8 +34,7 @@
 #include <thrust/system/cuda/detail/transform.h>
 #include <thrust/functional.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 namespace __copy {
@@ -60,5 +59,5 @@ namespace __copy {
 }    // namespace __copy
 
 }    // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

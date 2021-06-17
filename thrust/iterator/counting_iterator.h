@@ -39,8 +39,7 @@
 // #include the details first
 #include <thrust/iterator/detail/counting_iterator.inl>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 /*! \addtogroup iterators
  *  \{
@@ -243,5 +242,5 @@ counting_iterator<Incrementable> make_counting_iterator(Incrementable x)
 /*! \} // end iterators
  */
 
-} // end thrust
+THRUST_NAMESPACE_END
 

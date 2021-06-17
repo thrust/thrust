@@ -27,8 +27,7 @@
 #include <thrust/reduce.h>
 #include <cassert>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace tbb
@@ -121,5 +120,5 @@ template<typename DerivedPolicy, typename RandomAccessIterator1, typename Size, 
 } // end detail
 } // end tbb
 } // end system
-} // end thrust
+THRUST_NAMESPACE_END
 

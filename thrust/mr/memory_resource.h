@@ -26,8 +26,7 @@
 #  include THRUST_MR_STD_MR_HEADER
 #endif
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 /*! \brief \p thrust::mr is the namespace containing system agnostic types and functions for \p memory_resource related functionalities.
  */
 namespace mr
@@ -213,5 +212,5 @@ MR * get_global_resource()
  */
 
 } // end mr
-} // end thrust
+THRUST_NAMESPACE_END
 

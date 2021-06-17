@@ -17,8 +17,7 @@
 #include <thrust/random/xor_combine_engine.h>
 #include <thrust/random/detail/random_core_access.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace random
 {
@@ -211,5 +210,5 @@ bool operator!=(const xor_combine_engine<Engine1,s1,Engine2,s2> &lhs,
 
 } // end random
 
-} // end thrust
+THRUST_NAMESPACE_END
 

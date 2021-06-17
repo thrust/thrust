@@ -17,8 +17,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/detail/swap.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 // define null_type
 struct null_type {};
@@ -956,5 +955,5 @@ inline bool operator>=(const detail::cons<T1, T2>& lhs, const detail::cons<S1, S
   return detail::gte(lhs, rhs);
 } // end operator>=()
 
-} // end thrust
+THRUST_NAMESPACE_END
 

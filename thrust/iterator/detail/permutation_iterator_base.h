@@ -21,8 +21,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/iterator/detail/minimum_system.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 template<typename,typename> class permutation_iterator;
 
@@ -49,5 +48,5 @@ template<typename ElementIterator,
 
 } // end detail
 
-} // end thrust
+THRUST_NAMESPACE_END
 

@@ -42,8 +42,7 @@ template<int...> class ID_impl;
 template<int... I> class Foo { ID_impl<I...> t;};
 #endif
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 namespace core {
 
@@ -536,7 +535,7 @@ namespace core {
     max_blocks_per_sm_impl(K k, int block_threads)
     {
       int occ;
-      cudaError_t status = cub::MaxSmOccupancy(occ, k, block_threads);
+      cudaError_t status = CUB_NS_QUALIFIER::MaxSmOccupancy(occ, k, block_threads);
       return cuda_optional<int>(status == cudaSuccess ? occ : -1, status);
     }
 
@@ -1180,5 +1179,5 @@ namespace core {
 
 }    // namespace core
 }
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

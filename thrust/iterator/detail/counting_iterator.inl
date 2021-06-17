@@ -22,8 +22,7 @@
 #include <thrust/detail/type_traits.h>
 #include <cstddef>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 // forward declaration of counting_iterator
 template <typename Incrementable, typename System, typename Traversal, typename Difference>
@@ -137,5 +136,5 @@ template<typename Difference, typename Incrementable1, typename Incrementable2>
 
 
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 
