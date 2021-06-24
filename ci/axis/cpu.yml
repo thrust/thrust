@@ -8,8 +8,8 @@ SDK_TYPE:
   - nvhpc
 
 SDK_VER:
-  - 11.0-devel
-  - 20.9-devel
+  - 11.3.1-devel
+  - 21.5-devel-cuda11.3
 
 OS_TYPE:
   - ubuntu
@@ -30,7 +30,8 @@ CXX_VER:
   - 8
   - 9
   - 10
-  - 20.9
+  - 11
+  - 21.5
   - latest
 
 exclude:
@@ -45,9 +46,9 @@ exclude:
     SDK_TYPE: cuda
   # Excludes by `SDK_VER`.
   - SDK_TYPE: cuda
-    SDK_VER: 20.9-devel
+    SDK_VER: 21.5-devel-cuda11.3
   - SDK_TYPE: nvhpc
-    SDK_VER: 11.0-devel
+    SDK_VER: 11.3.1-devel
   # Excludes by `CXX_VER`.
   - CXX_TYPE: nvcxx
     CXX_VER: 5
@@ -62,11 +63,13 @@ exclude:
   - CXX_TYPE: nvcxx
     CXX_VER: 10
   - CXX_TYPE: nvcxx
+    CXX_VER: 11
+  - CXX_TYPE: nvcxx
     CXX_VER: latest
   - CXX_TYPE: gcc
-    CXX_VER: 10
+    CXX_VER: 11
   - CXX_TYPE: gcc
-    CXX_VER: 20.9
+    CXX_VER: 21.5
   - CXX_TYPE: gcc
     CXX_VER: latest
   - CXX_TYPE: clang
@@ -74,9 +77,7 @@ exclude:
   - CXX_TYPE: clang
     CXX_VER: 6
   - CXX_TYPE: clang
-    CXX_VER: 10
-  - CXX_TYPE: clang
-    CXX_VER: 20.9
+    CXX_VER: 21.5
   - CXX_TYPE: clang
     CXX_VER: latest
   - CXX_TYPE: icc
@@ -92,5 +93,7 @@ exclude:
   - CXX_TYPE: icc
     CXX_VER: 10
   - CXX_TYPE: icc
-    CXX_VER: 20.9
+    CXX_VER: 11
+  - CXX_TYPE: icc
+    CXX_VER: 21.5
 

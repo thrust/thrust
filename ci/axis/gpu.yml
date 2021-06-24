@@ -7,7 +7,7 @@ SDK_TYPE:
   - cuda
 
 SDK_VER:
-  - 11.0-devel
+  - 11.3.1-devel
 
 OS_TYPE:
   - ubuntu
