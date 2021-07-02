@@ -2,4 +2,7 @@
 .p4config
 docs/html/
 docs/api/
+docs/overview.md
+docs/contributing/code_of_conduct.md
+docs/releases/changelog.md
 discrete_voronoi.pgm
