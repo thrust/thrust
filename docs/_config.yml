@@ -15,7 +15,8 @@ incremental: true
 # just-the-docs ignores these filenames by default.
 include: [ "contributing.md", "code_of_conduct.md" ]
 
-exclude: [ "node_modules", "doxybook_templates", "doxygen_jekyll_header.html" ]
+exclude: [ "node_modules", "doxybook_templates",
+           "generate_markdown.bash", "serve_docs_locally.bash" ]
 
 plugins:
   - jekyll-optional-front-matter # GitHub Pages.
