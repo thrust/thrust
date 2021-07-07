@@ -1,3 +1,4 @@
 [submodule "cub"]
+	url = https://github.com/senior-zero/cub.git
+	branch = main-feature/github/cub_merge_sort
 	path = dependencies/cub
-	url = ../cub.git
