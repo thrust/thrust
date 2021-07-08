@@ -51,7 +51,6 @@ OutputIterator expand(InputIterator1 first1,
      thrust::maximum<difference_type>());
 
   // gather input values according to index array (output = first2[output_indices])
-  OutputIterator output_end = output; thrust::advance(output_end, output_size);
   thrust::gather(output_indices.begin(),
                  output_indices.end(),
                  first2,
