@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#pragma once
 
 #include <thrust/reverse.h>
 #include <thrust/detail/type_traits.h>
@@ -58,7 +59,7 @@ void stable_sort(sequential::execution_policy<DerivedPolicy> &exec,
                  thrust::detail::true_type)
 {
   thrust::system::detail::sequential::stable_primitive_sort(exec, first, last);
-        
+
   // if comp is greater<T> then reverse the keys
   typedef typename thrust::iterator_traits<RandomAccessIterator>::value_type KeyType;
 

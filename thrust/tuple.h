@@ -16,12 +16,12 @@
 
 
 /*! \file tuple.h
- *  \brief A type encapsulating a heterogeneous collection of elements
+ *  \brief A type encapsulating a heterogeneous collection of elements.
  */
 
 /*
  * Copyright (C) 1999, 2000 Jaakko Järvi (jaakko.jarvi@cs.utu.fi)
- * 
+ *
  * Distributed under the Boost Software License, Version 1.0.
  * (See accompanying NOTICE file for the complete license)
  *
@@ -155,12 +155,12 @@ get(const detail::cons<HT, TT>& t);
 
 
 
-/*! \p tuple is a class template that can be instantiated with up to ten arguments.
- *  Each template argument specifies the type of element in the \p tuple.
- *  Consequently, tuples are heterogeneous, fixed-size collections of values. An
- *  instantiation of \p tuple with two arguments is similar to an instantiation
- *  of \p pair with the same two arguments. Individual elements of a \p tuple may
- *  be accessed with the \p get function.
+/*! \brief \p tuple is a class template that can be instantiated with up to ten
+ *  arguments. Each template argument specifies the type of element in the \p
+ *  tuple. Consequently, tuples are heterogeneous, fixed-size collections of
+ *  values. An instantiation of \p tuple with two arguments is similar to an
+ *  instantiation of \p pair with the same two arguments. Individual elements
+ *  of a \p tuple may be accessed with the \p get function.
  *
  *  \tparam TN The type of the <tt>N</tt> \c tuple element. Thrust's \p tuple
  *          type currently supports up to ten elements.
@@ -171,18 +171,20 @@ get(const detail::cons<HT, TT>& t);
  *  \code
  *  #include <thrust/tuple.h>
  *  #include <iostream>
- *  ...
- *  // create a tuple containing an int, a float, and a string
- *  thrust::tuple<int, float, const char*> t(13, 0.1f, "thrust");
+ *  
+ *  int main() {
+ *    // Create a tuple containing an `int`, a `float`, and a string.
+ *    thrust::tuple<int, float, const char*> t(13, 0.1f, "thrust");
  *
- *  // individual members are accessed with the free function get
- *  std::cout << "The first element's value is " << thrust::get<0>(t) << std::endl; 
+ *    // Individual members are accessed with the free function `get`.
+ *    std::cout << "The first element's value is " << thrust::get<0>(t) << std::endl;
  *
- *  // or the member function get
- *  std::cout << "The second element's value is " << t.get<1>() << std::endl;
+ *    // ... or the member function `get`.
+ *    std::cout << "The second element's value is " << t.get<1>() << std::endl;
  *
- *  // we can also modify elements with the same function
- *  thrust::get<0>(t) += 10;
+ *    // We can also modify elements with the same function.
+ *    thrust::get<0>(t) += 10;
+ *  }
  *  \endcode
  *
  *  \see pair
@@ -194,8 +196,12 @@ get(const detail::cons<HT, TT>& t);
  */
 template <class T0, class T1, class T2, class T3, class T4,
           class T5, class T6, class T7, class T8, class T9>
-  class tuple :
-    public detail::map_tuple_to_cons<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type
+  class tuple
+  /*! \cond
+   */
+    : public detail::map_tuple_to_cons<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type
+  /*! \endcond
+   */
 {
   /*! \cond
    */
@@ -207,6 +213,7 @@ template <class T0, class T1, class T2, class T3, class T4,
    */
 
   public:
+
   /*! \p tuple's no-argument constructor initializes each element.
    */
   inline __host__ __device__
@@ -216,7 +223,7 @@ template <class T0, class T1, class T2, class T3, class T4,
    *     and intializes all other elements.
    *  \param t0 The value to assign to this \p tuple's first element.
    */
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0)
     : inherited(t0,
                 static_cast<const null_type&>(null_type()),
@@ -235,7 +242,7 @@ template <class T0, class T1, class T2, class T3, class T4,
    *  \param t1 The value to assign to this \p tuple's second element.
    *  \note \p tuple's constructor has ten variants of this form, the rest of which are ommitted here for brevity.
    */
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1)
     : inherited(t0, t1,
@@ -251,7 +258,7 @@ template <class T0, class T1, class T2, class T3, class T4,
   /*! \cond
    */
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2)
@@ -264,7 +271,7 @@ template <class T0, class T1, class T2, class T3, class T4,
                 static_cast<const null_type&>(null_type()),
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -277,7 +284,7 @@ template <class T0, class T1, class T2, class T3, class T4,
                 static_cast<const null_type&>(null_type()),
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -290,7 +297,7 @@ template <class T0, class T1, class T2, class T3, class T4,
                 static_cast<const null_type&>(null_type()),
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -303,7 +310,7 @@ template <class T0, class T1, class T2, class T3, class T4,
                 static_cast<const null_type&>(null_type()),
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -316,7 +323,7 @@ template <class T0, class T1, class T2, class T3, class T4,
                 static_cast<const null_type&>(null_type()),
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -329,7 +336,7 @@ template <class T0, class T1, class T2, class T3, class T4,
                 static_cast<const null_type&>(null_type()),
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -342,7 +349,7 @@ template <class T0, class T1, class T2, class T3, class T4,
     : inherited(t0, t1, t2, t3, t4, t5, t6, t7, t8,
                 static_cast<const null_type&>(null_type())) {}
 
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(typename access_traits<T0>::parameter_type t0,
         typename access_traits<T1>::parameter_type t1,
         typename access_traits<T2>::parameter_type t2,
@@ -357,12 +364,12 @@ template <class T0, class T1, class T2, class T3, class T4,
 
 
   template<class U1, class U2>
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple(const detail::cons<U1, U2>& p) : inherited(p) {}
 
   __thrust_exec_check_disable__
   template <class U1, class U2>
-  inline __host__ __device__ 
+  inline __host__ __device__
   tuple& operator=(const detail::cons<U1, U2>& k)
   {
     inherited::operator=(k);

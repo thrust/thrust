@@ -1,0 +1,6 @@
+{%- if exists("brief") -%}
+  <span class="doxybook-comment">{{ noop() -}}
+    {%- include "synopsis_indent.tmpl" -%}
+    /* {{ brief }} */{{ noop() -}}
+  </span>{{ noop() -}}
+{%- endif -%}

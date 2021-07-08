@@ -35,7 +35,7 @@ namespace thrust
  *
  *  \tparam MR type of a memory resource to get an instance from. Must be \p DefaultConstructible.
  *  \param system execution policy for which the resource is requested.
- *  \returns a pointer to a global instance of \p MR for the current device.
+ *  \return a pointer to a global instance of \p MR for the current device.
  */
 template<typename MR, typename DerivedPolicy>
 __host__

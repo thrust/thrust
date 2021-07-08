@@ -14,9 +14,8 @@
  *  limitations under the License.
  */
 
-
-/*! \file device_malloc_allocator.h
- *  \brief An allocator which allocates storage with \p device_malloc
+/*! \file 
+ *  \brief An allocator which allocates storage with \p device_malloc.
  */
 
 #pragma once
@@ -36,8 +35,7 @@ namespace thrust
 template<typename> class device_ptr;
 template<typename T> device_ptr<T> device_malloc(const std::size_t n);
 
-/*! \addtogroup memory_management Memory Management
- *  \addtogroup memory_management_classes Memory Management Classes
+/*! \addtogroup allocators Allocators 
  *  \ingroup memory_management
  *  \{
  */
@@ -177,7 +175,7 @@ template<typename T>
     inline bool operator!=(device_malloc_allocator const &a) const {return !operator==(a); }
 }; // end device_malloc_allocator
 
-/*! \}
+/*! \} // allocators
  */
 
 } // end thrust

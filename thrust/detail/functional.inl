@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/functional.h>
 
 namespace thrust

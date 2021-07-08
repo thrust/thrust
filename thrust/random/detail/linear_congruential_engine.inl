@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/detail/mod.h>
 #include <thrust/random/detail/random_core_access.h>

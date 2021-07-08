@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/iterator/iterator_adaptor.h>
 
 namespace thrust
@@ -22,7 +24,7 @@ namespace thrust
 template <typename InputFunction, typename OutputFunction, typename Iterator>
   class transform_input_output_iterator;
 
-namespace detail 
+namespace detail
 {
 
 // Proxy reference that invokes InputFunction when reading from and

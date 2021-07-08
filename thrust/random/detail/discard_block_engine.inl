@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/random/discard_block_engine.h>
 
 namespace thrust

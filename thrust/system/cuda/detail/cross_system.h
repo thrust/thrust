@@ -122,14 +122,13 @@ namespace cuda_cub {
               decltype(direction_of_copy(std::declval<ExecutionPolicy0>(),
                                          std::declval<ExecutionPolicy1>()))>
   constexpr __host__ __device__
-  auto is_device_to_host_copy(
+  thrust::detail::integral_constant<
+    bool, cudaMemcpyDeviceToHost == Direction::value
+  >
+  is_device_to_host_copy(
     ExecutionPolicy0 const& exec0
   , ExecutionPolicy1 const& exec1
-  )
-    noexcept -> 
-      thrust::detail::integral_constant<
-        bool, cudaMemcpyDeviceToHost == Direction::value
-      >
+  ) noexcept
   {
     return {};
   }
@@ -139,11 +138,10 @@ namespace cuda_cub {
             typename Direction =
               decltype(direction_of_copy(std::declval<ExecutionPolicy>()))>
   constexpr __host__ __device__
-  auto is_device_to_host_copy(ExecutionPolicy const& exec)
-    noexcept -> 
-      thrust::detail::integral_constant<
-        bool, cudaMemcpyDeviceToHost == Direction::value
-      >
+  thrust::detail::integral_constant<
+    bool, cudaMemcpyDeviceToHost == Direction::value
+  >
+  is_device_to_host_copy(ExecutionPolicy const& exec) noexcept
   {
     return {};
   }
@@ -155,14 +153,13 @@ namespace cuda_cub {
               decltype(direction_of_copy(std::declval<ExecutionPolicy0>(),
                                          std::declval<ExecutionPolicy1>()))>
   constexpr __host__ __device__
-  auto is_host_to_device_copy(
+  thrust::detail::integral_constant<
+    bool, cudaMemcpyHostToDevice == Direction::value
+  >
+  is_host_to_device_copy(
     ExecutionPolicy0 const& exec0
   , ExecutionPolicy1 const& exec1
-  )
-    noexcept -> 
-      thrust::detail::integral_constant<
-        bool, cudaMemcpyHostToDevice == Direction::value
-      >
+  ) noexcept
   {
     return {};
   }
@@ -172,11 +169,10 @@ namespace cuda_cub {
             typename Direction =
               decltype(direction_of_copy(std::declval<ExecutionPolicy>()))>
   constexpr __host__ __device__
-  auto is_host_to_device_copy(ExecutionPolicy const& exec)
-    noexcept -> 
-      thrust::detail::integral_constant<
-        bool, cudaMemcpyHostToDevice == Direction::value
-      >
+  thrust::detail::integral_constant<
+    bool, cudaMemcpyHostToDevice == Direction::value
+  >
+  is_host_to_device_copy(ExecutionPolicy const& exec) noexcept
   {
     return {};
   }
@@ -188,14 +184,13 @@ namespace cuda_cub {
               decltype(direction_of_copy(std::declval<ExecutionPolicy0>(),
                                          std::declval<ExecutionPolicy1>()))>
   constexpr __host__ __device__
-  auto is_device_to_device_copy(
+  thrust::detail::integral_constant<
+    bool, cudaMemcpyDeviceToDevice == Direction::value
+  >
+  is_device_to_device_copy(
     ExecutionPolicy0 const& exec0
   , ExecutionPolicy1 const& exec1
-  )
-    noexcept -> 
-      thrust::detail::integral_constant<
-        bool, cudaMemcpyDeviceToDevice == Direction::value
-      >
+  ) noexcept
   {
     return {};
   }
@@ -205,11 +200,10 @@ namespace cuda_cub {
             typename Direction =
               decltype(direction_of_copy(std::declval<ExecutionPolicy>()))>
   constexpr __host__ __device__
-  auto is_device_to_device_copy(ExecutionPolicy const& exec)
-    noexcept -> 
-      thrust::detail::integral_constant<
-        bool, cudaMemcpyDeviceToDevice == Direction::value
-      >
+  thrust::detail::integral_constant<
+    bool, cudaMemcpyDeviceToDevice == Direction::value
+  >
+  is_device_to_device_copy(ExecutionPolicy const& exec) noexcept
   {
     return {};
   }

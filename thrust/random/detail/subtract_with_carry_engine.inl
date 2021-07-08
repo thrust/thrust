@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/subtract_with_carry_engine.h>
 #include <thrust/random/detail/mod.h>
@@ -105,7 +107,7 @@ template<typename UIntType, size_t w, size_t s, size_t r>
 {
   typedef std::basic_ostream<CharT,Traits> ostream_type;
   typedef typename ostream_type::ios_base     ios_base;
-                  
+
   const typename ios_base::fmtflags flags = os.flags();
   const CharT fill  = os.fill();
   const CharT space = os.widen(' ');
@@ -113,11 +115,11 @@ template<typename UIntType, size_t w, size_t s, size_t r>
   os.fill(space);
 
   const UIntType long_lag_ = r;
-                                                          
+
   for(size_t i = 0; i < r; ++i)
     os << m_x[(i + m_k) % long_lag_] << space;
   os << m_carry;
-                                                                          
+
   os.flags(flags);
   os.fill(fill);
   return os;

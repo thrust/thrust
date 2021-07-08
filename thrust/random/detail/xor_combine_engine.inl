@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/random/xor_combine_engine.h>
 #include <thrust/random/detail/random_core_access.h>
 

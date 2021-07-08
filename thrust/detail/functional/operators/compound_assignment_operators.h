@@ -38,7 +38,7 @@ struct plus_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) += THRUST_FWD(t2)))
-      -> decltype(THRUST_FWD(t1) += THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) += THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) += THRUST_FWD(t2);
   }
@@ -86,7 +86,7 @@ struct minus_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) -= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) -= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) -= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) -= THRUST_FWD(t2);
   }
@@ -134,7 +134,7 @@ struct multiplies_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) *= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) *= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) *= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) *= THRUST_FWD(t2);
   }
@@ -182,7 +182,7 @@ struct divides_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) /= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) /= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) /= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) /= THRUST_FWD(t2);
   }
@@ -230,7 +230,7 @@ struct modulus_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) %= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) %= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) %= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) %= THRUST_FWD(t2);
   }
@@ -278,7 +278,7 @@ struct bit_and_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) &= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) &= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) &= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) &= THRUST_FWD(t2);
   }
@@ -326,7 +326,7 @@ struct bit_or_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) |= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) |= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) |= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) |= THRUST_FWD(t2);
   }
@@ -374,7 +374,7 @@ struct bit_xor_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) ^= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) ^= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) ^= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) ^= THRUST_FWD(t2);
   }
@@ -422,7 +422,7 @@ struct bit_lshift_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) <<= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) <<= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) <<= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) <<= THRUST_FWD(t2);
   }
@@ -469,7 +469,7 @@ struct bit_rshift_equal
   __host__ __device__
   constexpr auto operator()(T1&& t1, T2&& t2) const
   noexcept(noexcept(THRUST_FWD(t1) >>= THRUST_FWD(t2)))
-  -> decltype(THRUST_FWD(t1) >>= THRUST_FWD(t2))
+  THRUST_TRAILING_RETURN(decltype(THRUST_FWD(t1) >>= THRUST_FWD(t2)))
   {
     return THRUST_FWD(t1) >>= THRUST_FWD(t2);
   }

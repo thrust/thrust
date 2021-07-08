@@ -14,10 +14,7 @@
  *  limitations under the License.
  */
 
-
-/*! \file fill.inl
- *  \brief Inline file for fill.h.
- */
+#pragma once
 
 #include <thrust/fill.h>
 #include <thrust/iterator/iterator_traits.h>

@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/random/uniform_real_distribution.h>
 
 namespace thrust

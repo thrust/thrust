@@ -14,10 +14,11 @@
  *  limitations under the License.
  */
 
+#pragma once
+
 #include <thrust/detail/config.h>
 #include <thrust/detail/pointer.h>
 #include <thrust/detail/type_traits.h>
-
 
 namespace thrust
 {
@@ -34,8 +35,8 @@ template<typename Element, typename Tag, typename Reference, typename Derived>
 template<typename Element, typename Tag, typename Reference, typename Derived>
   __host__ __device__
   pointer<Element,Tag,Reference,Derived>
-    ::pointer(decltype(nullptr))
-      : super_t(static_cast<Element*>(nullptr))
+    ::pointer(std::nullptr_t np)
+      : super_t(static_cast<Element*>(np))
 {} // end pointer::pointer
 
 
@@ -180,30 +181,30 @@ operator<<(std::basic_ostream<charT, traits> &os,
 // `std::unique_ptr`.
 template <typename Element, typename Tag, typename Reference, typename Derived>
 __host__ __device__
-bool operator==(decltype(nullptr), pointer<Element, Tag, Reference, Derived> p)
+bool operator==(std::nullptr_t np, pointer<Element, Tag, Reference, Derived> p)
 {
-  return nullptr == p.get();
+  return np == p.get();
 }
 
 template <typename Element, typename Tag, typename Reference, typename Derived>
 __host__ __device__
-bool operator==(pointer<Element, Tag, Reference, Derived> p, decltype(nullptr))
+bool operator==(pointer<Element, Tag, Reference, Derived> p, std::nullptr_t np)
 {
-  return nullptr == p.get();
+  return np == p.get();
 }
 
 template <typename Element, typename Tag, typename Reference, typename Derived>
 __host__ __device__
-bool operator!=(decltype(nullptr), pointer<Element, Tag, Reference, Derived> p)
+bool operator!=(std::nullptr_t np, pointer<Element, Tag, Reference, Derived> p)
 {
-  return !(nullptr == p);
+  return !(np == p);
 }
 
 template <typename Element, typename Tag, typename Reference, typename Derived>
 __host__ __device__
-bool operator!=(pointer<Element, Tag, Reference, Derived> p, decltype(nullptr))
+bool operator!=(pointer<Element, Tag, Reference, Derived> p, std::nullptr_t np)
 {
-  return !(nullptr == p);
+  return !(np == p);
 }
 
 } // namespace thrust

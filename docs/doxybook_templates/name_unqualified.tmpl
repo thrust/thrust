@@ -1,0 +1,11 @@
+{%- if exists("kind") and kind == "friend" -%}
+  {#- The `fullname` of friends will be wrong, but their      -#}{{ noop() -}}
+  {#- `name` will be correct and fully qualified.             -#}{{ noop() -}}
+  {{- escape(stripNamespace(name)) -}}
+{%- else if exists("fullname") -%}
+  {{- escape(stripNamespace(fullname)) -}}
+{%- else -%}
+  {#- Base classes won't have a `fullname`, but their `name`s -#}{{ noop() -}}
+  {#- will be correct and fully qualified.                    -#}{{ noop() -}}
+  {{- escape(name) -}}
+{%- endif -%}
