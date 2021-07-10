@@ -108,7 +108,6 @@ namespace __merge_sort {
     key_type key2 = keys_shared[keys2_beg];
 
 
-#pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
       bool p = (keys2_beg < keys2_end) &&
@@ -311,10 +310,8 @@ namespace __merge_sort {
       void stable_odd_even_sort(key_type (&keys)[ITEMS_PER_THREAD],
                                 item_type (&items)[ITEMS_PER_THREAD])
       {
-#pragma unroll
         for (int i = 0; i < ITEMS_PER_THREAD; ++i)
         {
-#pragma unroll
           for (int j = 1 & i; j < ITEMS_PER_THREAD - 1; j += 2)
           {
             if (compare_op(keys[j + 1], keys[j]))
@@ -354,7 +351,6 @@ namespace __merge_sort {
         // each thread has  sorted keys_loc
         // merge sort keys_loc in shared memory
         //
-#pragma unroll
         for (int coop = 2; coop <= BLOCK_THREADS; coop *= 2)
         {
           sync_threadblock();
@@ -483,7 +479,7 @@ namespace __merge_sort {
           // and fill the remainig keys with it
           //
           key_type max_key = keys_loc[0];
-#pragma unroll
+
           for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
           {
             if (ITEMS_PER_THREAD * tid + ITEM < num_remaining)
