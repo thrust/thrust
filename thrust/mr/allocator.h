@@ -29,8 +29,7 @@
 #include <thrust/mr/validator.h>
 #include <thrust/mr/polymorphic_adaptor.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace mr
 {
 
@@ -246,5 +245,5 @@ public:
 };
 
 } // end mr
-} // end thrust
+THRUST_NAMESPACE_END
 

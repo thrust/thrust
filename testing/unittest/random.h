@@ -25,14 +25,14 @@ template<typename T, typename = void>
 
 template<typename T>
   struct generate_random_integer<T,
-    typename thrust::detail::disable_if<
-      thrust::detail::is_non_bool_arithmetic<T>::value
+    typename THRUST_NS_QUALIFIER::detail::disable_if<
+      THRUST_NS_QUALIFIER::detail::is_non_bool_arithmetic<T>::value
     >::type
   >
 {
   T operator()(unsigned int i) const
   {
-      thrust::default_random_engine rng(hash(i));
+      THRUST_NS_QUALIFIER::default_random_engine rng(hash(i));
 
       return static_cast<T>(rng());
   }
@@ -40,15 +40,15 @@ template<typename T>
 
 template<typename T>
   struct generate_random_integer<T,
-    typename thrust::detail::enable_if<
-      thrust::detail::is_non_bool_integral<T>::value
+    typename THRUST_NS_QUALIFIER::detail::enable_if<
+      THRUST_NS_QUALIFIER::detail::is_non_bool_integral<T>::value
     >::type
   >
 {
   T operator()(unsigned int i) const
   {
-      thrust::default_random_engine rng(hash(i));
-      thrust::uniform_int_distribution<T> dist;
+      THRUST_NS_QUALIFIER::default_random_engine rng(hash(i));
+      THRUST_NS_QUALIFIER::uniform_int_distribution<T> dist;
 
       return static_cast<T>(dist(rng));
   }
@@ -56,8 +56,8 @@ template<typename T>
 
 template<typename T>
   struct generate_random_integer<T,
-    typename thrust::detail::enable_if<
-      thrust::detail::is_floating_point<T>::value
+    typename THRUST_NS_QUALIFIER::detail::enable_if<
+      THRUST_NS_QUALIFIER::detail::is_floating_point<T>::value
     >::type
   >
 {
@@ -66,8 +66,8 @@ template<typename T>
       T const min = std::numeric_limits<T>::min();
       T const max = std::numeric_limits<T>::max();
 
-      thrust::default_random_engine rng(hash(i));
-      thrust::uniform_real_distribution<T> dist(min, max);
+      THRUST_NS_QUALIFIER::default_random_engine rng(hash(i));
+      THRUST_NS_QUALIFIER::uniform_real_distribution<T> dist(min, max);
 
       return static_cast<T>(dist(rng));
   }
@@ -78,8 +78,8 @@ template<>
 {
   bool operator()(unsigned int i) const
   {
-      thrust::default_random_engine rng(hash(i));
-      thrust::uniform_int_distribution<unsigned int> dist(0,1);
+      THRUST_NS_QUALIFIER::default_random_engine rng(hash(i));
+      THRUST_NS_QUALIFIER::uniform_int_distribution<unsigned int> dist(0,1);
 
       return dist(rng) == 1;
   }
@@ -91,8 +91,8 @@ template<typename T>
 {
   T operator()(unsigned int i) const
   {
-      thrust::default_random_engine rng(hash(i));
-      thrust::uniform_int_distribution<unsigned int> dist(0,20);
+      THRUST_NS_QUALIFIER::default_random_engine rng(hash(i));
+      THRUST_NS_QUALIFIER::uniform_int_distribution<unsigned int> dist(0,20);
 
       return static_cast<T>(dist(rng));
   } 
@@ -101,13 +101,13 @@ template<typename T>
 
 
 template<typename T>
-thrust::host_vector<T> random_integers(const size_t N)
+THRUST_NS_QUALIFIER::host_vector<T> random_integers(const size_t N)
 {
-    thrust::host_vector<T> vec(N);
-    thrust::transform(thrust::counting_iterator<unsigned int>(static_cast<unsigned int>(0)),
-                      thrust::counting_iterator<unsigned int>(static_cast<unsigned int>(N)),
-                      vec.begin(),
-                      generate_random_integer<T>());
+    THRUST_NS_QUALIFIER::host_vector<T> vec(N);
+    THRUST_NS_QUALIFIER::transform(THRUST_NS_QUALIFIER::counting_iterator<unsigned int>(static_cast<unsigned int>(0)),
+                                   THRUST_NS_QUALIFIER::counting_iterator<unsigned int>(static_cast<unsigned int>(N)),
+                                   vec.begin(),
+                                   generate_random_integer<T>());
 
     return vec;
 }
@@ -119,13 +119,13 @@ T random_integer()
 }
 
 template<typename T>
-thrust::host_vector<T> random_samples(const size_t N)
+THRUST_NS_QUALIFIER::host_vector<T> random_samples(const size_t N)
 {
-    thrust::host_vector<T> vec(N);
-    thrust::transform(thrust::counting_iterator<unsigned int>(static_cast<unsigned int>(0)),
-                      thrust::counting_iterator<unsigned int>(static_cast<unsigned int>(N)),
-                      vec.begin(),
-                      generate_random_sample<T>());
+    THRUST_NS_QUALIFIER::host_vector<T> vec(N);
+    THRUST_NS_QUALIFIER::transform(THRUST_NS_QUALIFIER::counting_iterator<unsigned int>(static_cast<unsigned int>(0)),
+                                   THRUST_NS_QUALIFIER::counting_iterator<unsigned int>(static_cast<unsigned int>(N)),
+                                   vec.begin(),
+                                   generate_random_sample<T>());
 
     return vec;
 }

@@ -26,3 +26,12 @@ if (THRUST_CPP_FOUND AND THRUST_CUDA_FOUND)
       ${extra_cmake_flags}
   )
 endif()
+
+# Check that namespace macros are used correctly:
+add_test(
+  NAME thrust.test.cmake.check_namespace
+  COMMAND
+    "${CMAKE_COMMAND}"
+      -D "Thrust_SOURCE_DIR=${Thrust_SOURCE_DIR}"
+      -P "${CMAKE_CURRENT_LIST_DIR}/check_namespace.cmake"
+)

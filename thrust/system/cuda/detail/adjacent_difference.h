@@ -45,8 +45,7 @@
 
 #include <cub/util_math.cuh>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 template <typename DerivedPolicy, typename InputIterator, typename OutputIterator, typename BinaryFunction>
 __host__ __device__ OutputIterator
@@ -65,9 +64,9 @@ namespace __adjacent_difference {
 
   template <int                      _BLOCK_THREADS,
             int                      _ITEMS_PER_THREAD = 1,
-            cub::BlockLoadAlgorithm  _LOAD_ALGORITHM   = cub::BLOCK_LOAD_DIRECT,
-            cub::CacheLoadModifier   _LOAD_MODIFIER    = cub::LOAD_DEFAULT,
-            cub::BlockStoreAlgorithm _STORE_ALGORITHM  = cub::BLOCK_STORE_DIRECT>
+            CUB_NS_QUALIFIER::BlockLoadAlgorithm  _LOAD_ALGORITHM   = CUB_NS_QUALIFIER::BLOCK_LOAD_DIRECT,
+            CUB_NS_QUALIFIER::CacheLoadModifier   _LOAD_MODIFIER    = CUB_NS_QUALIFIER::LOAD_DEFAULT,
+            CUB_NS_QUALIFIER::BlockStoreAlgorithm _STORE_ALGORITHM  = CUB_NS_QUALIFIER::BLOCK_STORE_DIRECT>
   struct PtxPolicy
   {
     enum
@@ -77,9 +76,9 @@ namespace __adjacent_difference {
       ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD
     };
 
-    static const cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
+    static const CUB_NS_QUALIFIER::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
+    static const CUB_NS_QUALIFIER::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static const CUB_NS_QUALIFIER::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
   };
 
   template<int INPUT_SIZE, int NOMINAL_4B_ITEMS_PER_THREAD>
@@ -115,9 +114,9 @@ namespace __adjacent_difference {
     };
     typedef PtxPolicy<128,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_DEFAULT,
+                      CUB_NS_QUALIFIER::BLOCK_STORE_WARP_TRANSPOSE>
         type;
   };
   template <class T>
@@ -131,9 +130,9 @@ namespace __adjacent_difference {
     };
     typedef PtxPolicy<128,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::BLOCK_STORE_WARP_TRANSPOSE>
         type;
   };
 
@@ -159,11 +158,11 @@ namespace __adjacent_difference {
       typedef typename core::BlockStore<PtxPlan, OutputIt, input_type>::type
           BlockStore;
 
-      typedef cub::BlockAdjacentDifference<input_type,
-                                           PtxPlan::BLOCK_THREADS,
-                                           1,
-                                           1,
-                                           Arch::ver>
+      typedef CUB_NS_QUALIFIER::BlockAdjacentDifference<input_type,
+                                                        PtxPlan::BLOCK_THREADS,
+                                                        1,
+                                                        1,
+                                                        Arch::ver>
           BlockAdjacentDifference;
 
       union TempStorage
@@ -396,7 +395,7 @@ namespace __adjacent_difference {
 
 
     Size tile_size = difference_plan.items_per_tile;
-    Size num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+    Size num_tiles = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items, tile_size);
 
     size_t tmp1        = num_tiles * sizeof(input_type);
     size_t vshmem_size = core::vshmem_size(difference_plan.shared_memory_size,
@@ -533,7 +532,7 @@ adjacent_difference(execution_policy<Derived> &policy,
 
 
 } // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 
 //
 #include <thrust/memory.h>

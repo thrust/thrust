@@ -48,8 +48,7 @@
 
 #include <cub/util_math.cuh>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 // forward declare generic reduce
 // to circumvent circular dependency
@@ -76,9 +75,9 @@ namespace __reduce {
   template <int                       _BLOCK_THREADS,
             int                       _ITEMS_PER_THREAD   = 1,
             int                       _VECTOR_LOAD_LENGTH = 1,
-            cub::BlockReduceAlgorithm _BLOCK_ALGORITHM    = cub::BLOCK_REDUCE_RAKING,
-            cub::CacheLoadModifier    _LOAD_MODIFIER      = cub::LOAD_DEFAULT,
-            cub::GridMappingStrategy  _GRID_MAPPING       = cub::GRID_MAPPING_DYNAMIC>
+            CUB_NS_QUALIFIER::BlockReduceAlgorithm _BLOCK_ALGORITHM    = CUB_NS_QUALIFIER::BLOCK_REDUCE_RAKING,
+            CUB_NS_QUALIFIER::CacheLoadModifier    _LOAD_MODIFIER      = CUB_NS_QUALIFIER::LOAD_DEFAULT,
+            CUB_NS_QUALIFIER::GridMappingStrategy  _GRID_MAPPING       = CUB_NS_QUALIFIER::GRID_MAPPING_DYNAMIC>
   struct PtxPolicy
   {
     enum
@@ -89,9 +88,9 @@ namespace __reduce {
       ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD
     };
 
-    static const cub::BlockReduceAlgorithm BLOCK_ALGORITHM = _BLOCK_ALGORITHM;
-    static const cub::CacheLoadModifier    LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::GridMappingStrategy  GRID_MAPPING    = _GRID_MAPPING;
+    static const CUB_NS_QUALIFIER::BlockReduceAlgorithm BLOCK_ALGORITHM = _BLOCK_ALGORITHM;
+    static const CUB_NS_QUALIFIER::CacheLoadModifier    LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static const CUB_NS_QUALIFIER::GridMappingStrategy  GRID_MAPPING    = _GRID_MAPPING;
   }; // struct PtxPolicy
 
   template<class,class>
@@ -111,9 +110,9 @@ namespace __reduce {
     typedef PtxPolicy<256,
                       CUB_MAX(1, 20 / SCALE_FACTOR_4B),
                       2,
-                      cub::BLOCK_REDUCE_WARP_REDUCTIONS,
-                      cub::LOAD_DEFAULT,
-                      cub::GRID_MAPPING_RAKE>
+                      CUB_NS_QUALIFIER::BLOCK_REDUCE_WARP_REDUCTIONS,
+                      CUB_NS_QUALIFIER::LOAD_DEFAULT,
+                      CUB_NS_QUALIFIER::GRID_MAPPING_RAKE>
         type;
   }; // Tuning sm30
 
@@ -124,18 +123,18 @@ namespace __reduce {
     typedef PtxPolicy<128,
                       CUB_MAX(1, 24 / Tuning::SCALE_FACTOR_1B),
                       4,
-                      cub::BLOCK_REDUCE_WARP_REDUCTIONS,
-                      cub::LOAD_LDG,
-                      cub::GRID_MAPPING_DYNAMIC>
+                      CUB_NS_QUALIFIER::BLOCK_REDUCE_WARP_REDUCTIONS,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::GRID_MAPPING_DYNAMIC>
         ReducePolicy1B;
 
     // ReducePolicy4B types (GTX Titan: 255.1 GB/s @ 48M 4B items)
     typedef PtxPolicy<256,
                       CUB_MAX(1, 20 / Tuning::SCALE_FACTOR_4B),
                       4,
-                      cub::BLOCK_REDUCE_WARP_REDUCTIONS,
-                      cub::LOAD_LDG,
-                      cub::GRID_MAPPING_DYNAMIC>
+                      CUB_NS_QUALIFIER::BLOCK_REDUCE_WARP_REDUCTIONS,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::GRID_MAPPING_DYNAMIC>
         ReducePolicy4B;
 
     typedef typename thrust::detail::conditional<(sizeof(T) < 4),
@@ -161,9 +160,9 @@ namespace __reduce {
       //
       typedef Tuning<Arch,T> tuning;
 
-      typedef typename cub::CubVector<T, PtxPlan::VECTOR_LOAD_LENGTH> Vector;
+      typedef typename CUB_NS_QUALIFIER::CubVector<T, PtxPlan::VECTOR_LOAD_LENGTH> Vector;
       typedef typename core::LoadIterator<PtxPlan, InputIt>::type     LoadIt;
-      typedef cub::BlockReduce<T,
+      typedef CUB_NS_QUALIFIER::BlockReduce<T,
                                PtxPlan::BLOCK_THREADS,
                                PtxPlan::BLOCK_ALGORITHM,
                                1,
@@ -171,7 +170,7 @@ namespace __reduce {
                                Arch::ver>
           BlockReduce;
 
-      typedef cub::CacheModifiedInputIterator<PtxPlan::LOAD_MODIFIER,
+      typedef CUB_NS_QUALIFIER::CacheModifiedInputIterator<PtxPlan::LOAD_MODIFIER,
                                               Vector,
                                               Size>
           VectorLoadIt;
@@ -194,7 +193,7 @@ namespace __reduce {
     //
     struct Plan : core::AgentPlan
     {
-      cub::GridMappingStrategy grid_mapping;
+      CUB_NS_QUALIFIER::GridMappingStrategy grid_mapping;
 
       template <class P>
       THRUST_RUNTIME_FUNCTION
@@ -297,14 +296,14 @@ namespace __reduce {
         T items[ITEMS_PER_THREAD];
 
         // Load items in striped fashion
-        cub::LoadDirectStriped<BLOCK_THREADS>(threadIdx.x,
+        CUB_NS_QUALIFIER::LoadDirectStriped<BLOCK_THREADS>(threadIdx.x,
                                               load_it + block_offset,
                                               items);
 
         // Reduce items within each thread stripe
         thread_aggregate =
-            (IS_FIRST_TILE) ? cub::internal::ThreadReduce(items, reduction_op)
-                            : cub::internal::ThreadReduce(items, reduction_op,
+            (IS_FIRST_TILE) ? CUB_NS_QUALIFIER::internal::ThreadReduce(items, reduction_op)
+                            : CUB_NS_QUALIFIER::internal::ThreadReduce(items, reduction_op,
                                                           thread_aggregate);
       }
 
@@ -343,8 +342,8 @@ namespace __reduce {
 
         // Reduce items within each thread stripe
         thread_aggregate =
-            (IS_FIRST_TILE) ? cub::internal::ThreadReduce(items, reduction_op)
-                            : cub::internal::ThreadReduce(items, reduction_op,
+            (IS_FIRST_TILE) ? CUB_NS_QUALIFIER::internal::ThreadReduce(items, reduction_op)
+                            : CUB_NS_QUALIFIER::internal::ThreadReduce(items, reduction_op,
                                                           thread_aggregate);
       }
 
@@ -460,9 +459,9 @@ namespace __reduce {
       //
       THRUST_DEVICE_FUNCTION T
       consume_tiles(Size /*num_items*/,
-                    cub::GridEvenShare<Size> &even_share,
-                    cub::GridQueue<UnsignedSize> & /*queue*/,
-                    thrust::detail::integral_constant<cub::GridMappingStrategy, cub::GRID_MAPPING_RAKE> /*is_rake*/)
+                    CUB_NS_QUALIFIER::GridEvenShare<Size> &even_share,
+                    CUB_NS_QUALIFIER::GridQueue<UnsignedSize> & /*queue*/,
+                    thrust::detail::integral_constant<CUB_NS_QUALIFIER::GridMappingStrategy, CUB_NS_QUALIFIER::GRID_MAPPING_RAKE> /*is_rake*/)
       {
         typedef is_true<ATTEMPT_VECTORIZATION>          attempt_vec;
         typedef is_true<true && ATTEMPT_VECTORIZATION>  path_a;
@@ -470,7 +469,7 @@ namespace __reduce {
 
         // Initialize even-share descriptor for this thread block
         even_share
-            .template BlockInit<ITEMS_PER_TILE, cub::GRID_MAPPING_RAKE>();
+            .template BlockInit<ITEMS_PER_TILE, CUB_NS_QUALIFIER::GRID_MAPPING_RAKE>();
 
         return is_aligned(input_it, attempt_vec())
                    ? consume_range_impl(even_share.block_offset,
@@ -491,7 +490,7 @@ namespace __reduce {
       template <class CAN_VECTORIZE>
       THRUST_DEVICE_FUNCTION T
       consume_tiles_impl(Size                         num_items,
-                         cub::GridQueue<UnsignedSize> queue,
+                         CUB_NS_QUALIFIER::GridQueue<UnsignedSize> queue,
                          CAN_VECTORIZE                can_vectorize)
       {
         using core::sync_threadblock;
@@ -578,9 +577,9 @@ namespace __reduce {
       THRUST_DEVICE_FUNCTION T
       consume_tiles(
           Size                              num_items,
-          cub::GridEvenShare<Size> &/*even_share*/,
-          cub::GridQueue<UnsignedSize> &    queue,
-          thrust::detail::integral_constant<cub::GridMappingStrategy, cub::GRID_MAPPING_DYNAMIC>)
+          CUB_NS_QUALIFIER::GridEvenShare<Size> &/*even_share*/,
+          CUB_NS_QUALIFIER::GridQueue<UnsignedSize> &    queue,
+          thrust::detail::integral_constant<CUB_NS_QUALIFIER::GridMappingStrategy, CUB_NS_QUALIFIER::GRID_MAPPING_DYNAMIC>)
       {
         typedef is_true<ATTEMPT_VECTORIZATION>         attempt_vec;
         typedef is_true<true && ATTEMPT_VECTORIZATION> path_a;
@@ -646,14 +645,14 @@ namespace __reduce {
     THRUST_AGENT_ENTRY(InputIt                          input_it,
                        OutputIt                         output_it,
                        Size                             num_items,
-                       cub::GridEvenShare<Size> even_share,
-                       cub::GridQueue<UnsignedSize>     queue,
+                       CUB_NS_QUALIFIER::GridEvenShare<Size> even_share,
+                       CUB_NS_QUALIFIER::GridQueue<UnsignedSize>     queue,
                        ReductionOp                      reduction_op,
                        char *                           shmem)
     {
       TempStorage& storage = *reinterpret_cast<TempStorage*>(shmem);
 
-      typedef thrust::detail::integral_constant<cub::GridMappingStrategy, ptx_plan::GRID_MAPPING> grid_mapping;
+      typedef thrust::detail::integral_constant<CUB_NS_QUALIFIER::GridMappingStrategy, ptx_plan::GRID_MAPPING> grid_mapping;
 
       T block_aggregate =
           impl(storage, input_it, reduction_op)
@@ -677,7 +676,7 @@ namespace __reduce {
     // Agent entry point
     //---------------------------------------------------------------------
 
-    THRUST_AGENT_ENTRY(cub::GridQueue<UnsignedSize> grid_queue,
+    THRUST_AGENT_ENTRY(CUB_NS_QUALIFIER::GridQueue<UnsignedSize> grid_queue,
                        Size                         num_items,
                        char * /*shmem*/)
     {
@@ -749,8 +748,8 @@ namespace __reduce {
               template get_max_blocks_per_sm<InputIt,
                                              OutputIt,
                                              Size,
-                                             cub::GridEvenShare<Size>,
-                                             cub::GridQueue<UnsignedSize>,
+                                             CUB_NS_QUALIFIER::GridEvenShare<Size>,
+                                             CUB_NS_QUALIFIER::GridQueue<UnsignedSize>,
                                              ReductionOp>(reduce_plan);
       CUDA_CUB_RET_IF_FAIL(max_blocks_per_sm.status());
 
@@ -761,7 +760,7 @@ namespace __reduce {
       int sm_oversubscription = 5;
       int max_blocks          = reduce_device_occupancy * sm_oversubscription;
 
-      cub::GridEvenShare<Size> even_share;
+      CUB_NS_QUALIFIER::GridEvenShare<Size> even_share;
       even_share.DispatchInit(static_cast<int>(num_items), max_blocks,
                               reduce_plan.items_per_tile);
 
@@ -776,10 +775,10 @@ namespace __reduce {
       size_t allocation_sizes[3] =
           {
               max_blocks * sizeof(T),                            // bytes needed for privatized block reductions
-              cub::GridQueue<UnsignedSize>::AllocationSize(),    // bytes needed for grid queue descriptor0
+              CUB_NS_QUALIFIER::GridQueue<UnsignedSize>::AllocationSize(),    // bytes needed for grid queue descriptor0
               vshmem_size                                        // size of virtualized shared memory storage
           };
-      status = cub::AliasTemporaries(d_temp_storage,
+      status = CUB_NS_QUALIFIER::AliasTemporaries(d_temp_storage,
                                      temp_storage_bytes,
                                      allocations,
                                      allocation_sizes);
@@ -790,21 +789,21 @@ namespace __reduce {
       }
 
       T *d_block_reductions = (T*) allocations[0];
-      cub::GridQueue<UnsignedSize> queue(allocations[1]);
+      CUB_NS_QUALIFIER::GridQueue<UnsignedSize> queue(allocations[1]);
       char *vshmem_ptr = vshmem_size > 0 ? (char *)allocations[2] : NULL;
 
 
       // Get grid size for device_reduce_sweep_kernel
       int reduce_grid_size = 0;
-      if (reduce_plan.grid_mapping == cub::GRID_MAPPING_RAKE)
+      if (reduce_plan.grid_mapping == CUB_NS_QUALIFIER::GRID_MAPPING_RAKE)
       {
         // Work is distributed evenly
         reduce_grid_size = even_share.grid_size;
       }
-      else if (reduce_plan.grid_mapping == cub::GRID_MAPPING_DYNAMIC)
+      else if (reduce_plan.grid_mapping == CUB_NS_QUALIFIER::GRID_MAPPING_DYNAMIC)
       {
         // Work is distributed dynamically
-        size_t num_tiles = cub::DivideAndRoundUp(num_items, reduce_plan.items_per_tile);
+        size_t num_tiles = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items, reduce_plan.items_per_tile);
 
         // if not enough to fill the device with threadblocks
         // then fill the device with threadblocks
@@ -944,8 +943,8 @@ T reduce_n_impl(execution_policy<Derived>& policy,
   size_t tmp_size = 0;
 
   THRUST_INDEX_TYPE_DISPATCH2(status,
-    cub::DeviceReduce::Reduce,
-    (cub::DispatchReduce<
+    CUB_NS_QUALIFIER::DeviceReduce::Reduce,
+    (CUB_NS_QUALIFIER::DispatchReduce<
         InputIt, T*, Size, BinaryOp
     >::Dispatch),
     num_items,
@@ -972,8 +971,8 @@ T reduce_n_impl(execution_policy<Derived>& policy,
   T* ret_ptr = thrust::detail::aligned_reinterpret_cast<T*>(tmp.data().get());
   void* tmp_ptr = static_cast<void*>((tmp.data() + sizeof(T)).get());
   THRUST_INDEX_TYPE_DISPATCH2(status,
-    cub::DeviceReduce::Reduce,
-    (cub::DispatchReduce<
+    CUB_NS_QUALIFIER::DeviceReduce::Reduce,
+    (CUB_NS_QUALIFIER::DispatchReduce<
         InputIt, T*, Size, BinaryOp
     >::Dispatch),
     num_items,
@@ -1069,7 +1068,7 @@ reduce(execution_policy<Derived> &policy,
 
 } // namespace cuda_cub
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/memory.h>
 #include <thrust/reduce.h>

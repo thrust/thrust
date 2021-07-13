@@ -25,8 +25,7 @@
 #include <thrust/system/detail/generic/uninitialized_copy.h>
 #include <thrust/system/detail/adl/uninitialized_copy.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 
 __thrust_exec_check_disable__
@@ -92,6 +91,6 @@ template<typename InputIterator,
 } // end uninitialized_copy_n()
 
 
-} // end thrust
+THRUST_NAMESPACE_END
 
 

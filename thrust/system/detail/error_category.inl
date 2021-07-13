@@ -22,8 +22,7 @@
 #include <thrust/functional.h>
 #include <cstring>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace system
 {
@@ -232,5 +231,5 @@ const error_category &system_category(void)
 
 } // end system
 
-} // end thrust
+THRUST_NAMESPACE_END
 

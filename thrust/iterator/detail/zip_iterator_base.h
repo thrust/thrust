@@ -29,8 +29,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/iterator/detail/tuple_of_iterator_references.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 // forward declare zip_iterator for zip_iterator_base
 template<typename IteratorTuple> class zip_iterator;
@@ -347,6 +346,6 @@ template<typename IteratorTuple>
 
 } // end detail
 
-} // end thrust
+THRUST_NAMESPACE_END
 
 

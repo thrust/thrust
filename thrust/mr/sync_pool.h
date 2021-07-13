@@ -28,8 +28,7 @@
 
 #include <thrust/mr/pool.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace mr
 {
 
@@ -110,7 +109,7 @@ private:
  */
 
 } // end mr
-} // end thrust
+THRUST_NAMESPACE_END
 
 #endif // THRUST_CPP_DIALECT >= 2011
 

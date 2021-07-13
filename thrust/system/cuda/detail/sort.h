@@ -46,8 +46,7 @@
 #include <thrust/detail/alignment.h>
 #include <thrust/type_traits/is_contiguous_iterator.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 namespace __merge_sort {
@@ -131,9 +130,9 @@ namespace __merge_sort {
 
   template <int                      _BLOCK_THREADS,
             int                      _ITEMS_PER_THREAD = 1,
-            cub::BlockLoadAlgorithm  _LOAD_ALGORITHM   = cub::BLOCK_LOAD_DIRECT,
-            cub::CacheLoadModifier   _LOAD_MODIFIER    = cub::LOAD_LDG,
-            cub::BlockStoreAlgorithm _STORE_ALGORITHM  = cub::BLOCK_STORE_DIRECT>
+            CUB_NS_QUALIFIER::BlockLoadAlgorithm  _LOAD_ALGORITHM   = CUB_NS_QUALIFIER::BLOCK_LOAD_DIRECT,
+            CUB_NS_QUALIFIER::CacheLoadModifier   _LOAD_MODIFIER    = CUB_NS_QUALIFIER::LOAD_LDG,
+            CUB_NS_QUALIFIER::BlockStoreAlgorithm _STORE_ALGORITHM  = CUB_NS_QUALIFIER::BLOCK_STORE_DIRECT>
   struct PtxPolicy
   {
     enum
@@ -143,9 +142,9 @@ namespace __merge_sort {
       ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD,
     };
 
-    static const cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
+    static const CUB_NS_QUALIFIER::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
+    static const CUB_NS_QUALIFIER::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static const CUB_NS_QUALIFIER::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
   }; // PtxPolicy
 
 
@@ -165,9 +164,9 @@ namespace __merge_sort {
 
     typedef PtxPolicy<256,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::BLOCK_STORE_WARP_TRANSPOSE>
         type;
   };
 
@@ -184,9 +183,9 @@ namespace __merge_sort {
 
     typedef PtxPolicy<512,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_LDG,
+                      CUB_NS_QUALIFIER::BLOCK_STORE_WARP_TRANSPOSE>
         type;
   };
 
@@ -203,9 +202,9 @@ namespace __merge_sort {
 
     typedef PtxPolicy<256,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_DEFAULT,
+                      CUB_NS_QUALIFIER::BLOCK_STORE_WARP_TRANSPOSE>
         type;
   };
 
@@ -220,9 +219,9 @@ namespace __merge_sort {
 
     typedef PtxPolicy<128,
                       ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
+                      CUB_NS_QUALIFIER::BLOCK_LOAD_WARP_TRANSPOSE,
+                      CUB_NS_QUALIFIER::LOAD_DEFAULT,
+                      CUB_NS_QUALIFIER::BLOCK_STORE_WARP_TRANSPOSE>
         type;
   };
 
@@ -1334,13 +1333,13 @@ namespace __radix_sort {
     THRUST_RUNTIME_FUNCTION static cudaError_t
     doit(void*                    d_temp_storage,
          size_t&                  temp_storage_bytes,
-         cub::DoubleBuffer<Key>&  keys_buffer,
-         cub::DoubleBuffer<Item>& /*items_buffer*/,
+         CUB_NS_QUALIFIER::DoubleBuffer<Key>&  keys_buffer,
+         CUB_NS_QUALIFIER::DoubleBuffer<Item>& /*items_buffer*/,
          Size                     count,
          cudaStream_t             stream,
          bool                     debug_sync)
     {
-      return cub::DeviceRadixSort::SortKeys(d_temp_storage,
+      return CUB_NS_QUALIFIER::DeviceRadixSort::SortKeys(d_temp_storage,
                                             temp_storage_bytes,
                                             keys_buffer,
                                             static_cast<int>(count),
@@ -1359,13 +1358,13 @@ namespace __radix_sort {
     THRUST_RUNTIME_FUNCTION static cudaError_t
     doit(void*                    d_temp_storage,
          size_t&                  temp_storage_bytes,
-         cub::DoubleBuffer<Key>&  keys_buffer,
-         cub::DoubleBuffer<Item>& /*items_buffer*/,
+         CUB_NS_QUALIFIER::DoubleBuffer<Key>&  keys_buffer,
+         CUB_NS_QUALIFIER::DoubleBuffer<Item>& /*items_buffer*/,
          Size                     count,
          cudaStream_t             stream,
          bool                     debug_sync)
     {
-      return cub::DeviceRadixSort::SortKeysDescending(d_temp_storage,
+      return CUB_NS_QUALIFIER::DeviceRadixSort::SortKeysDescending(d_temp_storage,
                                                       temp_storage_bytes,
                                                       keys_buffer,
                                                       static_cast<int>(count),
@@ -1384,13 +1383,13 @@ namespace __radix_sort {
     THRUST_RUNTIME_FUNCTION static cudaError_t
     doit(void*                    d_temp_storage,
          size_t&                  temp_storage_bytes,
-         cub::DoubleBuffer<Key>&  keys_buffer,
-         cub::DoubleBuffer<Item>& items_buffer,
+         CUB_NS_QUALIFIER::DoubleBuffer<Key>&  keys_buffer,
+         CUB_NS_QUALIFIER::DoubleBuffer<Item>& items_buffer,
          Size                     count,
          cudaStream_t             stream,
          bool                     debug_sync)
     {
-      return cub::DeviceRadixSort::SortPairs(d_temp_storage,
+      return CUB_NS_QUALIFIER::DeviceRadixSort::SortPairs(d_temp_storage,
                                              temp_storage_bytes,
                                              keys_buffer,
                                              items_buffer,
@@ -1410,13 +1409,13 @@ namespace __radix_sort {
     THRUST_RUNTIME_FUNCTION static cudaError_t
     doit(void*                    d_temp_storage,
          size_t&                  temp_storage_bytes,
-         cub::DoubleBuffer<Key>&  keys_buffer,
-         cub::DoubleBuffer<Item>& items_buffer,
+         CUB_NS_QUALIFIER::DoubleBuffer<Key>&  keys_buffer,
+         CUB_NS_QUALIFIER::DoubleBuffer<Item>& items_buffer,
          Size                     count,
          cudaStream_t             stream,
          bool                     debug_sync)
     {
-      return cub::DeviceRadixSort::SortPairsDescending(d_temp_storage,
+      return CUB_NS_QUALIFIER::DeviceRadixSort::SortPairsDescending(d_temp_storage,
                                                        temp_storage_bytes,
                                                        keys_buffer,
                                                        items_buffer,
@@ -1445,8 +1444,8 @@ namespace __radix_sort {
     cudaStream_t stream             = cuda_cub::stream(policy);
     bool         debug_sync         = THRUST_DEBUG_SYNC_FLAG;
 
-    cub::DoubleBuffer<Key>  keys_buffer(keys, NULL);
-    cub::DoubleBuffer<Item> items_buffer(items, NULL);
+    CUB_NS_QUALIFIER::DoubleBuffer<Key>  keys_buffer(keys, NULL);
+    CUB_NS_QUALIFIER::DoubleBuffer<Item> items_buffer(items, NULL);
 
     Size keys_count = count;
     Size items_count = SORT_ITEMS::value ? count : 0;
@@ -1755,5 +1754,5 @@ stable_sort_by_key(
 
 
 }    // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

@@ -25,8 +25,7 @@
 #include <thrust/system/detail/generic/scatter.h>
 #include <thrust/system/detail/adl/scatter.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 
 __thrust_exec_check_disable__
@@ -161,6 +160,5 @@ template<typename InputIterator1,
   return thrust::scatter_if(select_system(system1,system2,system3,system4), first, last, map, stencil, output, pred);
 } // end scatter_if()
 
-
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

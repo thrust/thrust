@@ -26,8 +26,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/type_traits/is_contiguous_iterator.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace detail
 {
 
@@ -74,5 +73,5 @@ struct proclaim_contiguous_iterator<
   thrust::detail::normal_iterator<T>
 > : true_type {};
 
-} // end thrust
+THRUST_NAMESPACE_END
 

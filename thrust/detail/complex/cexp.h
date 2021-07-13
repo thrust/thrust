@@ -52,7 +52,7 @@
 #include <thrust/complex.h>
 #include <thrust/detail/complex/math_private.h>
 
-namespace thrust{
+THRUST_NAMESPACE_BEGIN
 namespace detail{
 namespace complex{		      	
 /*
@@ -180,4 +180,4 @@ inline complex<double> exp(const complex<double>& z){
   return detail::complex::cexp(z);
 }
 
-} // namespace thrust
+THRUST_NAMESPACE_END

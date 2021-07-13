@@ -21,8 +21,7 @@
 #include <thrust/detail/function.h>
 #include <thrust/detail/cstdint.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace omp
@@ -93,5 +92,5 @@ void reduce_intervals(execution_policy<DerivedPolicy> &,
 } // end namespace detail
 } // end namespace omp
 } // end namespace system
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

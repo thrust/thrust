@@ -32,8 +32,7 @@
 
 #include <thrust/system/cuda/detail/mismatch.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 template <class Derived,
@@ -70,5 +69,5 @@ equal(execution_policy<Derived>& policy,
 
 
 } // namespace cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

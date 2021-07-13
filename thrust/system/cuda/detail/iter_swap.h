@@ -24,8 +24,7 @@
 #include <thrust/system/cuda/detail/execution_policy.h>
 #include <thrust/swap.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 
@@ -62,5 +61,5 @@ void iter_swap(thrust::cuda::execution_policy<DerivedPolicy> &, Pointer1 a, Poin
 
 
 } // end cuda_cub
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

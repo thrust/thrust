@@ -18,8 +18,7 @@
 
 #include <thrust/detail/type_traits.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace detail
 { 
@@ -56,8 +55,8 @@ struct primitive_minimum_type
   : minimum_type_detail::minimum_type_impl<
       T1,
       T2,
-      ::thrust::detail::is_convertible<T1,T2>::value,
-      ::thrust::detail::is_convertible<T2,T1>::value
+      THRUST_NS_QUALIFIER::detail::is_convertible<T1,T2>::value,
+      THRUST_NS_QUALIFIER::detail::is_convertible<T2,T1>::value
     >
 {
 }; // end primitive_minimum_type
@@ -158,5 +157,5 @@ template<typename T1,  typename T2,  typename T3,  typename T4,
 
 } // end detail
 
-} // end thrust
+THRUST_NAMESPACE_END
 

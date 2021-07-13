@@ -38,8 +38,7 @@
 
 #include <cub/device/device_scan.cuh>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub
 {
 namespace detail
@@ -58,16 +57,16 @@ OutputIt inclusive_scan_n_impl(thrust::cuda_cub::execution_policy<Derived> &poli
                                OutputIt result,
                                ScanOp scan_op)
 {
-  using Dispatch32 = cub::DispatchScan<InputIt,
-                                       OutputIt,
-                                       ScanOp,
-                                       cub::NullType,
-                                       thrust::detail::int32_t>;
-  using Dispatch64 = cub::DispatchScan<InputIt,
-                                       OutputIt,
-                                       ScanOp,
-                                       cub::NullType,
-                                       thrust::detail::int64_t>;
+  using Dispatch32 = CUB_NS_QUALIFIER::DispatchScan<InputIt,
+                                                    OutputIt,
+                                                    ScanOp,
+                                                    CUB_NS_QUALIFIER::NullType,
+                                                    thrust::detail::int32_t>;
+  using Dispatch64 = CUB_NS_QUALIFIER::DispatchScan<InputIt,
+                                                    OutputIt,
+                                                    ScanOp,
+                                                    CUB_NS_QUALIFIER::NullType,
+                                                    thrust::detail::int64_t>;
 
   cudaStream_t stream = thrust::cuda_cub::stream(policy);
   cudaError_t status;
@@ -84,7 +83,7 @@ OutputIt inclusive_scan_n_impl(thrust::cuda_cub::execution_policy<Derived> &poli
                                  first,
                                  result,
                                  scan_op,
-                                 cub::NullType{},
+                                 CUB_NS_QUALIFIER::NullType{},
                                  num_items_fixed,
                                  stream,
                                  THRUST_DEBUG_SYNC_FLAG));
@@ -108,7 +107,7 @@ OutputIt inclusive_scan_n_impl(thrust::cuda_cub::execution_policy<Derived> &poli
                                  first,
                                  result,
                                  scan_op,
-                                 cub::NullType{},
+                                 CUB_NS_QUALIFIER::NullType{},
                                  num_items_fixed,
                                  stream,
                                  THRUST_DEBUG_SYNC_FLAG));
@@ -136,16 +135,16 @@ OutputIt exclusive_scan_n_impl(thrust::cuda_cub::execution_policy<Derived> &poli
                                InitValueT init,
                                ScanOp scan_op)
 {
-  using Dispatch32 = cub::DispatchScan<InputIt,
-                                       OutputIt,
-                                       ScanOp,
-                                       InitValueT,
-                                       thrust::detail::int32_t>;
-  using Dispatch64 = cub::DispatchScan<InputIt,
-                                       OutputIt,
-                                       ScanOp,
-                                       InitValueT,
-                                       thrust::detail::int64_t>;
+  using Dispatch32 = CUB_NS_QUALIFIER::DispatchScan<InputIt,
+                                                    OutputIt,
+                                                    ScanOp,
+                                                    InitValueT,
+                                                    thrust::detail::int32_t>;
+  using Dispatch64 = CUB_NS_QUALIFIER::DispatchScan<InputIt,
+                                                    OutputIt,
+                                                    ScanOp,
+                                                    InitValueT,
+                                                    thrust::detail::int64_t>;
 
   cudaStream_t stream = thrust::cuda_cub::stream(policy);
   cudaError_t status;
@@ -361,7 +360,7 @@ OutputIt exclusive_scan(thrust::cuda_cub::execution_policy<Derived> &policy,
 };
 
 } // namespace cuda_cub
-} // namespace thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/scan.h>
 

@@ -73,12 +73,3 @@
  *         Legacy; will be 0 for all future releases.
  */
 #define THRUST_PATCH_NUMBER 0
-
-/*! \namespace thrust
- *  \brief \p thrust is the top-level namespace which contains all Thrust
- *         functions and types.
- */
-namespace thrust
-{
-
-}

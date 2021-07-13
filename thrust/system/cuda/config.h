@@ -68,9 +68,6 @@
 #define THRUST_DEBUG_SYNC_FLAG false
 #endif
 
-#define THRUST_CUB_NS_PREFIX namespace thrust {   namespace cuda_cub {
-#define THRUST_CUB_NS_POSTFIX }  }
-
 #ifndef THRUST_IGNORE_CUB_VERSION_CHECK
 #include <thrust/version.h>
 #include <cub/util_namespace.cuh> // This includes <cub/version.cuh> in newer releases.

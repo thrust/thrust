@@ -53,8 +53,7 @@
 
 #include <type_traits>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace system { namespace cuda { namespace detail
 {
@@ -294,12 +293,12 @@ invoke_radix_sort(
   cudaStream_t          stream
 , void*                 tmp_ptr
 , std::size_t&          tmp_size
-, cub::DoubleBuffer<T>& keys
+, CUB_NS_QUALIFIER::DoubleBuffer<T>& keys
 , Size&                 n
 , StrictWeakOrdering
 )
 {
-  return cub::DeviceRadixSort::SortKeys(
+  return CUB_NS_QUALIFIER::DeviceRadixSort::SortKeys(
     tmp_ptr
   , tmp_size
   , keys
@@ -320,12 +319,12 @@ invoke_radix_sort(
   cudaStream_t          stream
 , void*                 tmp_ptr
 , std::size_t&          tmp_size
-, cub::DoubleBuffer<T>& keys
+, CUB_NS_QUALIFIER::DoubleBuffer<T>& keys
 , Size&                 n
 , StrictWeakOrdering
 )
 {
-  return cub::DeviceRadixSort::SortKeysDescending(
+  return CUB_NS_QUALIFIER::DeviceRadixSort::SortKeysDescending(
     tmp_ptr
   , tmp_size
   , keys
@@ -367,7 +366,7 @@ auto async_stable_sort_n(
 
   unique_eager_event e;
 
-  cub::DoubleBuffer<T> keys(
+  CUB_NS_QUALIFIER::DoubleBuffer<T> keys(
     raw_pointer_cast(&*first), nullptr
   );
 
@@ -514,7 +513,7 @@ THRUST_DECLTYPE_RETURNS(
 
 } // cuda_cub
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 
 #endif // THRUST_DEVICE_COMPILER == THRUST_DEVICE_COMPILER_NVCC
 

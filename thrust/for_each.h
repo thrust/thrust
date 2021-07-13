@@ -24,9 +24,7 @@
 #include <thrust/detail/type_traits.h>
 #include <thrust/detail/execution_policy.h>
 
-namespace thrust
-{
-
+THRUST_NAMESPACE_BEGIN
 
 /*! \addtogroup modifying
  *  \ingroup transformations
@@ -274,7 +272,7 @@ InputIterator for_each_n(InputIterator first,
 /*! \} // end modifying
  */
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/detail/for_each.inl>
 

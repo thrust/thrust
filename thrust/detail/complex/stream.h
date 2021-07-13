@@ -17,8 +17,7 @@
 
 #include <thrust/complex.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 template<typename ValueType,class charT, class traits>
 std::basic_ostream<charT, traits>& operator<<(std::basic_ostream<charT, traits>& os, const complex<ValueType>& z)
 {
@@ -68,4 +67,4 @@ operator>>(std::basic_istream<charT, traits>& is, complex<ValueType>& z)
   return is;
 }
 
-} // namespace thrust
+THRUST_NAMESPACE_END

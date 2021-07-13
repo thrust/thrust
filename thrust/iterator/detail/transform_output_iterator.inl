@@ -17,8 +17,7 @@
 #include <thrust/iterator/transform_output_iterator.h>
 #include <thrust/iterator/iterator_adaptor.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 template <typename UnaryFunction, typename OutputIterator>
   class transform_output_iterator;
@@ -74,5 +73,5 @@ struct is_proxy_reference<
     : public thrust::detail::true_type {};
 
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 

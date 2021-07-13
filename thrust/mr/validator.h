@@ -19,8 +19,7 @@
 #include <thrust/detail/config/memory_resource.h>
 #include <thrust/mr/memory_resource.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace mr
 {
 
@@ -46,5 +45,5 @@ struct validator2<T, T> : private validator<T>
 };
 
 } // end mr
-} // end thrust
+THRUST_NAMESPACE_END
 

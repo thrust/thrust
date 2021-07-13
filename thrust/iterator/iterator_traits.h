@@ -35,8 +35,7 @@
 
 #include <iterator>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace detail
 {
@@ -104,7 +103,7 @@ template<typename Iterator> struct iterator_traversal;
 
 template<typename Iterator> struct iterator_system;
 
-} // namespace thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/iterator/detail/iterator_traversal_tags.h>
 #include <thrust/iterator/detail/host_system_tag.h>

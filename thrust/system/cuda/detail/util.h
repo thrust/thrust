@@ -34,8 +34,7 @@
 #include <thrust/system_error.h>
 #include <thrust/system/cuda/error.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace cuda_cub {
 
@@ -586,4 +585,4 @@ struct counting_iterator_t
 
 }    // cuda_
 
-} // end namespace thrust
+THRUST_NAMESPACE_END

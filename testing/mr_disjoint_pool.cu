@@ -32,7 +32,8 @@ struct alloc_id
     }
 };
 
-namespace thrust { namespace detail {
+THRUST_NAMESPACE_BEGIN
+namespace detail {
 template<>
 struct pointer_traits<alloc_id>
 {
@@ -48,7 +49,10 @@ struct pointer_traits<alloc_id>
         return reinterpret_cast<void *>(id.alignment);
     }
 };
-}}
+
+} // end namespace detail
+
+THRUST_NAMESPACE_END
 
 class dummy_resource final : public thrust::mr::memory_resource<alloc_id>
 {

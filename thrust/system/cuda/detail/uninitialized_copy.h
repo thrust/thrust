@@ -34,8 +34,7 @@
 #include <thrust/system/cuda/detail/util.h>
 #include <thrust/system/cuda/detail/parallel_for.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace cuda_cub {
 
@@ -112,5 +111,5 @@ uninitialized_copy(execution_policy<Derived>& policy,
 
 }    // namespace cuda_
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

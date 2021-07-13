@@ -20,8 +20,7 @@
 #include <cmath>
 #include <thrust/detail/complex/c99math.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
   /* --- Binary Arithmetic Operators --- */
 
@@ -296,5 +295,5 @@ polar(const T0& m, const T1& theta)
   return complex<T>(m * cos(theta), m * sin(theta));
 }
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

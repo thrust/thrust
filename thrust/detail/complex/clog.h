@@ -49,7 +49,7 @@
 #include <thrust/complex.h>
 #include <thrust/detail/complex/math_private.h>
 
-namespace thrust{
+THRUST_NAMESPACE_BEGIN
 namespace detail{
 namespace complex{
 
@@ -208,5 +208,5 @@ inline complex<ValueType> log10(const complex<ValueType>& z){
   return thrust::log(z)/ValueType(2.30258509299404568402);
 }
 
-} // namespace thrust
+THRUST_NAMESPACE_END
     

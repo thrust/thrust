@@ -52,8 +52,7 @@
 //    fixed in CUB first).
 //  - Need to check if CUB actually optimizes for sums before putting in effort
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace system
 {
 namespace cuda
@@ -75,16 +74,16 @@ async_exclusive_scan_n(execution_policy<DerivedPolicy>& policy,
                        InitialValueType init,
                        BinaryOp op)
 {
-  using Dispatch32 = cub::DispatchScan<ForwardIt,
-                                       OutputIt,
-                                       BinaryOp,
-                                       InitialValueType,
-                                       thrust::detail::int32_t>;
-  using Dispatch64 = cub::DispatchScan<ForwardIt,
-                                       OutputIt,
-                                       BinaryOp,
-                                       InitialValueType,
-                                       thrust::detail::int64_t>;
+  using Dispatch32 = CUB_NS_QUALIFIER::DispatchScan<ForwardIt,
+                                                    OutputIt,
+                                                    BinaryOp,
+                                                    InitialValueType,
+                                                    thrust::detail::int32_t>;
+  using Dispatch64 = CUB_NS_QUALIFIER::DispatchScan<ForwardIt,
+                                                    OutputIt,
+                                                    BinaryOp,
+                                                    InitialValueType,
+                                                    thrust::detail::int64_t>;
 
   auto const device_alloc = get_async_device_allocator(policy);
   unique_eager_event ev;
@@ -191,7 +190,7 @@ THRUST_RETURNS(
 
 } // namespace cuda_cub
 
-} // namespace thrust
+THRUST_NAMESPACE_END
 
 #endif // THRUST_DEVICE_COMPILER == THRUST_DEVICE_COMPILER_NVCC
 

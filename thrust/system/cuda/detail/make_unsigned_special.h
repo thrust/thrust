@@ -16,8 +16,7 @@
 
 #pragma once
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 namespace detail {
@@ -38,5 +37,5 @@ namespace detail {
 
 }
 }
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

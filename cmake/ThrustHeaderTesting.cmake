@@ -118,6 +118,11 @@ foreach(thrust_target IN LISTS THRUST_TARGETS)
   set(headertest_target ${config_prefix}.headers)
   add_library(${headertest_target} OBJECT ${headertest_srcs})
   target_link_libraries(${headertest_target} PUBLIC ${thrust_target})
+  # Wrap Thrust/CUB in a custom namespace to check proper use of ns macros:
+  target_compile_definitions(${headertest_target} PRIVATE
+    "THRUST_WRAPPED_NAMESPACE=wrapped_thrust"
+    "CUB_WRAPPED_NAMESPACE=wrapped_cub"
+  )
   thrust_clone_target_properties(${headertest_target} ${thrust_target})
 
   # Disable macro checks on TBB; the TBB atomic implementation uses `I` and

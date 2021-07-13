@@ -32,8 +32,7 @@
 #include <thrust/system/cuda/detail/scan.h>
 #include <thrust/distance.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace cuda_cub {
 
@@ -109,5 +108,5 @@ transform_exclusive_scan(execution_policy<Derived> &policy,
 
 }    // namespace cuda_cub
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 #endif

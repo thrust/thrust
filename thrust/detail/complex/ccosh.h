@@ -50,7 +50,7 @@
 #include <thrust/complex.h>
 #include <thrust/detail/complex/math_private.h>
 
-namespace thrust{
+THRUST_NAMESPACE_BEGIN
 namespace detail{
 namespace complex{		      	
 
@@ -210,4 +210,4 @@ inline thrust::complex<double> cosh(const thrust::complex<double>& z){
   return detail::complex::ccosh(z);
 }
 
-} // namespace thrust
+THRUST_NAMESPACE_END

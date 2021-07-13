@@ -19,8 +19,7 @@
 
 #include <thrust/system/error_code.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace system
 {
@@ -193,5 +192,5 @@ bool operator!=(const error_condition &lhs, const error_condition &rhs)
 
 } // end system
 
-} // end thrust
+THRUST_NAMESPACE_END
 

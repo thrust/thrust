@@ -26,8 +26,7 @@
 #include <thrust/detail/type_traits/has_member_function.h>
 #include <thrust/detail/type_traits.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace detail
 {
 
@@ -416,7 +415,7 @@ template<typename Alloc>
 
 
 } // end detail
-} // end thrust
+THRUST_NAMESPACE_END
 
 #include <thrust/detail/allocator/allocator_traits.inl>
 

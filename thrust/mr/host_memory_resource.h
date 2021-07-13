@@ -23,11 +23,10 @@
 #include __THRUST_HOST_SYSTEM_MEMORY_HEADER
 #undef __THRUST_HOST_SYSTEM_MEMORY_HEADER
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 typedef thrust::system::__THRUST_HOST_SYSTEM_NAMESPACE::memory_resource
     host_memory_resource;
 
-} // end thrust
+THRUST_NAMESPACE_END
 

@@ -29,8 +29,7 @@
 
 #include <thrust/mr/host_memory_resource.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 
 namespace system
 {
@@ -121,5 +120,5 @@ using thrust::system::cuda::universal_memory_resource;
 using thrust::system::cuda::universal_host_pinned_memory_resource;
 }
 
-} // end namespace thrust
+THRUST_NAMESPACE_END
 

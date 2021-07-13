@@ -29,8 +29,7 @@
 #include <thrust/detail/seq.h>
 #include <thrust/system/cuda/detail/par.h>
 
-namespace thrust
-{
+THRUST_NAMESPACE_BEGIN
 namespace cuda_cub {
 
 template <int PAR>
@@ -88,4 +87,4 @@ cvt_to_seq(Policy& policy)
 #endif
 
 } // namespace cuda_
-} // end namespace thrust
+THRUST_NAMESPACE_END
