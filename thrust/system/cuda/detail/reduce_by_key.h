@@ -36,7 +36,6 @@
 #include <thrust/system/cuda/detail/util.h>
 #include <thrust/detail/raw_reference_cast.h>
 #include <thrust/detail/type_traits/iterator/is_output_iterator.h>
-#include <cub/device/device_reduce.cuh>
 #include <thrust/system/cuda/detail/par_to_seq.h>
 #include <thrust/system/cuda/detail/core/agent_launcher.h>
 #include <thrust/system/cuda/detail/get_value.h>
@@ -47,6 +46,12 @@
 #include <thrust/distance.h>
 #include <thrust/detail/alignment.h>
 
+// DeviceReduce is not actually used, but some implementation details are.
+// These algorithms need to be unified.
+#include <cub/device/device_reduce.cuh>
+
+#include <cub/detail/cdp_dispatch.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
 namespace thrust
@@ -84,107 +89,56 @@ namespace __reduce_by_key {
             cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS    = _BLOCK_THREADS,
-      ITEMS_PER_THREAD = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD
-    };
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    static const cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
-    static const cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+    static constexpr cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static constexpr cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
   };    // struct PtxPolicy
 
-  template <class Arch, class Key, class Value>
-  struct Tuning;
-
-  template <class Key, class Value>
-  struct Tuning<sm30, Key, Value>
+  template <typename Key, typename Value, int Nominal4BItemsPerThread>
+  struct TuningHelper
   {
-    enum
-    {
-      MAX_INPUT_BYTES      = mpl::max<size_t, sizeof(Key), sizeof(Value)>::value,
-      COMBINED_INPUT_BYTES = sizeof(Key) + sizeof(Value),
+    static constexpr int MAX_INPUT_BYTES =
+      static_cast<int>(mpl::max<size_t, sizeof(Key), sizeof(Value)>::value);
+    static constexpr int COMBINED_INPUT_BYTES =
+      static_cast<int>(sizeof(Key) + sizeof(Value));
 
-      NOMINAL_4B_ITEMS_PER_THREAD = 6,
+    static constexpr int ITEMS_PER_THREAD =
+      (MAX_INPUT_BYTES <= 8)
+        ? Nominal4BItemsPerThread
+        : mpl::min<
+            int,
+            Nominal4BItemsPerThread,
+            mpl::max<int,
+                     1,
+                     ((Nominal4BItemsPerThread * 8) + COMBINED_INPUT_BYTES - 1) /
+                       COMBINED_INPUT_BYTES>::value>::value;
+  }; // TuningHelper
 
-      ITEMS_PER_THREAD = mpl::min<
-          int,
-          NOMINAL_4B_ITEMS_PER_THREAD,
-          mpl::max<
-              int,
-              1,
-              ((NOMINAL_4B_ITEMS_PER_THREAD * 8) +
-               COMBINED_INPUT_BYTES - 1) /
-                  COMBINED_INPUT_BYTES>::value>::value,
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning sm30
-
-  template<class Key, class Value>
-  struct Tuning<sm35,Key,Value> : Tuning<sm30,Key,Value>
+  template <typename Key, typename Value>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 6,
+    using Helper = TuningHelper<Key, Value, 6>;
+    using Policy = PtxPolicy<128,
+                             Helper::ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning350
 
-      ITEMS_PER_THREAD =
-          (Tuning::MAX_INPUT_BYTES <= 8)
-              ? 6
-              : mpl::min<
-                    int,
-                    NOMINAL_4B_ITEMS_PER_THREAD,
-                    mpl::max<
-                        int,
-                        1,
-                        ((NOMINAL_4B_ITEMS_PER_THREAD * 8) +
-                         Tuning::COMBINED_INPUT_BYTES - 1) /
-                            Tuning::COMBINED_INPUT_BYTES>::value>::value,
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning sm35
-
-  template<class Key, class Value>
-  struct Tuning<sm52,Key,Value> : Tuning<sm30,Key,Value>
+  template <typename Key, typename Value>
+  struct Tuning520 : cub::detail::ptx_base<520>
   {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 9,
-
-      ITEMS_PER_THREAD =
-          (Tuning::MAX_INPUT_BYTES <= 8)
-              ? 9
-              : mpl::min<
-                    int,
-                    NOMINAL_4B_ITEMS_PER_THREAD,
-                    mpl::max<
-                        int,
-                        1,
-                        ((NOMINAL_4B_ITEMS_PER_THREAD * 8) +
-                         Tuning::COMBINED_INPUT_BYTES - 1) /
-                            Tuning::COMBINED_INPUT_BYTES>::value>::value,
-    };
-
-    typedef PtxPolicy<256,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning sm52
+    using Helper = TuningHelper<Key, Value, 9>;
+    using Policy = PtxPolicy<256,
+                             Helper::ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning520
 
   template <class KeysInputIt,
             class ValuesInputIt,
@@ -196,46 +150,50 @@ namespace __reduce_by_key {
             class Size>
   struct ReduceByKeyAgent
   {
-    typedef typename iterator_traits<KeysInputIt>::value_type   key_type;
-    typedef typename iterator_traits<ValuesInputIt>::value_type value_type;
-    typedef Size                                                size_type;
+    using key_type   = typename iterator_traits<KeysInputIt>::value_type;
+    using value_type = typename iterator_traits<ValuesInputIt>::value_type;
+    using size_type  = Size;
 
-    typedef cub::KeyValuePair<size_type, value_type> size_value_pair_t;
-    typedef cub::KeyValuePair<key_type, value_type>  key_value_pair_t;
+    using size_value_pair_t = cub::KeyValuePair<size_type, value_type>;
+    using key_value_pair_t  = cub::KeyValuePair<key_type, value_type>;
 
-    typedef cub::ReduceByKeyScanTileState<value_type, size_type> ScanTileState;
-    typedef cub::ReduceBySegmentOp<ReductionOp> ReduceBySegmentOp;
+    using ScanTileState = cub::ReduceByKeyScanTileState<value_type, size_type>;
+    using ReduceBySegmentOp = cub::ReduceBySegmentOp<ReductionOp>;
 
-    template<class Arch>
-    struct PtxPlan : Tuning<Arch,key_type, value_type>::type
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning520<key_type, value_type>,
+                                           Tuning350<key_type, value_type>>;
+
+    template<typename Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch, key_type, value_type> tuning;
+      using KeysLoadIt =
+        typename core::LoadIterator<PtxPlan, KeysInputIt>::type;
+      using ValuesLoadIt =
+        typename core::LoadIterator<PtxPlan, ValuesInputIt>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, KeysInputIt>::type    KeysLoadIt;
-      typedef typename core::LoadIterator<PtxPlan, ValuesInputIt>::type  ValuesLoadIt;
+      using BlockLoadKeys = typename core::BlockLoad<PtxPlan, KeysLoadIt>::type;
+      using BlockLoadValues =
+        typename core::BlockLoad<PtxPlan, ValuesLoadIt>::type;
 
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadIt>::type   BlockLoadKeys;
-      typedef typename core::BlockLoad<PtxPlan, ValuesLoadIt>::type BlockLoadValues;
+      using BlockDiscontinuityKeys =
+        cub::BlockDiscontinuity<key_type,
+                                PtxPlan::BLOCK_THREADS,
+                                1,
+                                1,
+                                Tuning::ptx_arch>;
 
-      typedef cub::BlockDiscontinuity<key_type,
-                                      PtxPlan::BLOCK_THREADS,
-                                      1,
-                                      1,
-                                      Arch::ver>
-          BlockDiscontinuityKeys;
+      using TilePrefixCallback = cub::TilePrefixCallbackOp<size_value_pair_t,
+                                                           ReduceBySegmentOp,
+                                                           ScanTileState,
+                                                           Tuning::ptx_arch>;
 
-      typedef cub::TilePrefixCallbackOp<size_value_pair_t,
-                                        ReduceBySegmentOp,
-                                        ScanTileState,
-                                        Arch::ver>
-          TilePrefixCallback;
-      typedef cub::BlockScan<size_value_pair_t,
-                             PtxPlan::BLOCK_THREADS,
-                             PtxPlan::SCAN_ALGORITHM,
-                             1,
-                             1,
-                             Arch::ver>
-          BlockScan;
+      using BlockScan = cub::BlockScan<size_value_pair_t,
+                                       PtxPlan::BLOCK_THREADS,
+                                       PtxPlan::SCAN_ALGORITHM,
+                                       1,
+                                       1,
+                                       Tuning::ptx_arch>;
 
       union TempStorage
       {
@@ -254,33 +212,29 @@ namespace __reduce_by_key {
       };    // union TempStorage
     };  // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::KeysLoadIt             KeysLoadIt;
-    typedef typename ptx_plan::ValuesLoadIt           ValuesLoadIt;
-    typedef typename ptx_plan::BlockLoadKeys          BlockLoadKeys;
-    typedef typename ptx_plan::BlockLoadValues        BlockLoadValues;
-    typedef typename ptx_plan::BlockDiscontinuityKeys BlockDiscontinuityKeys;
-    typedef typename ptx_plan::TilePrefixCallback     TilePrefixCallback;
-    typedef typename ptx_plan::BlockScan              BlockScan;
-    typedef typename ptx_plan::TempStorage            TempStorage;
-
-    enum
+    template <typename ActivePtxPlan>
+    struct impl
     {
-      BLOCK_THREADS     = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_THREAD  = ptx_plan::ITEMS_PER_THREAD,
-      ITEMS_PER_TILE    = ptx_plan::ITEMS_PER_TILE,
-      TWO_PHASE_SCATTER = (ITEMS_PER_THREAD > 1),
+      using KeysLoadIt             = typename ActivePtxPlan::KeysLoadIt;
+      using ValuesLoadIt           = typename ActivePtxPlan::ValuesLoadIt;
+      using BlockLoadKeys          = typename ActivePtxPlan::BlockLoadKeys;
+      using BlockLoadValues        = typename ActivePtxPlan::BlockLoadValues;
+      using BlockDiscontinuityKeys = typename ActivePtxPlan::BlockDiscontinuityKeys;
+      using TilePrefixCallback     = typename ActivePtxPlan::TilePrefixCallback;
+      using BlockScan              = typename ActivePtxPlan::BlockScan;
+      using TempStorage            = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int BLOCK_THREADS      = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_THREAD   = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int ITEMS_PER_TILE     = ActivePtxPlan::ITEMS_PER_TILE;
+      static constexpr bool TWO_PHASE_SCATTER = (ITEMS_PER_THREAD > 1);
 
       // Whether or not the scan operation has a zero-valued identity value
       // (true if we're performing addition on a primitive type)
-      HAS_IDENTITY_ZERO = thrust::detail::is_same<ReductionOp,
-                                                  plus<value_type> >::value &&
-                          thrust::detail::is_arithmetic<value_type>::value
-    };
+      static constexpr bool HAS_IDENTITY_ZERO =
+        thrust::detail::is_same<ReductionOp, plus<value_type>>::value &&
+        thrust::detail::is_arithmetic<value_type>::value;
 
-    struct impl
-    {
       //---------------------------------------------------------------------
       // Per-thread fields
       //---------------------------------------------------------------------
@@ -774,8 +728,8 @@ namespace __reduce_by_key {
                                   int             /*num_tiles*/,
                                   ScanTileState & tile_state)
           : storage(storage_),
-            keys_load_it(core::make_load_iterator(ptx_plan(), keys_input_it_)),
-            values_load_it(core::make_load_iterator(ptx_plan(), values_input_it_)),
+            keys_load_it(core::make_load_iterator(ActivePtxPlan(), keys_input_it_)),
+            values_load_it(core::make_load_iterator(ActivePtxPlan(), values_input_it_)),
             keys_output_it(keys_output_it_),
             values_output_it(values_output_it_),
             num_runs_output_it(num_runs_output_it_),
@@ -806,6 +760,7 @@ namespace __reduce_by_key {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(KeysInputIt     keys_input_it,
                        ValuesInputIt   values_input_it,
                        KeysOutputIt    keys_output_it,
@@ -818,19 +773,20 @@ namespace __reduce_by_key {
                        int             num_tiles,
                        char *          shmem)
     {
-      TempStorage &storage = *reinterpret_cast<TempStorage*>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(storage,
-           keys_input_it,
-           values_input_it,
-           keys_output_it,
-           values_output_it,
-           num_runs_output_it,
-           equality_op,
-           reduction_op,
-           num_items,
-           num_tiles,
-           tile_state);
+      impl<ActivePtxPlan>{storage,
+                            keys_input_it,
+                            values_input_it,
+                            keys_output_it,
+                            values_output_it,
+                            num_runs_output_it,
+                            equality_op,
+                            reduction_op,
+                            num_items,
+                            num_tiles,
+                            tile_state};
     }
 
   };    // struct ReduceByKeyAgent
@@ -840,14 +796,13 @@ namespace __reduce_by_key {
             class NumSelectedIt>
   struct InitAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<128> {};
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(ScanTileState tile_state,
                        Size          num_tiles,
                        NumSelectedIt num_selected_out,
@@ -867,7 +822,7 @@ namespace __reduce_by_key {
             class EqualityOp,
             class ReductionOp,
             class Size>
-  THRUST_RUNTIME_FUNCTION cudaError_t
+  CUB_RUNTIME_FUNCTION cudaError_t
   doit_step(void *          d_temp_storage,
             size_t &        temp_storage_bytes,
             KeysInputIt     keys_input_it,
@@ -881,46 +836,50 @@ namespace __reduce_by_key {
             cudaStream_t    stream,
             bool            debug_sync)
   {
-    using core::AgentPlan;
-    using core::AgentLauncher;
-
     cudaError_t status = cudaSuccess;
+
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
+
     if (num_items == 0)
-      return cudaErrorNotSupported;
+    {
+      return status;
+    }
 
-    typedef AgentLauncher<
-        ReduceByKeyAgent<KeysInputIt,
-                         ValuesInputIt,
-                         KeysOutputIt,
-                         ValuesOutputIt,
-                         EqualityOp,
-                         ReductionOp,
-                         NumRunsOutputIt,
-                         Size> >
-        reduce_by_key_agent;
+    // Declare type aliases for agents, etc:
+    using rbk_agent_t = ReduceByKeyAgent<KeysInputIt,
+                                         ValuesInputIt,
+                                         KeysOutputIt,
+                                         ValuesOutputIt,
+                                         EqualityOp,
+                                         ReductionOp,
+                                         NumRunsOutputIt,
+                                         Size>;
 
-    typedef typename reduce_by_key_agent::ScanTileState ScanTileState;
-    typedef AgentLauncher<
-        InitAgent<ScanTileState,
-                  Size,
-                  NumRunsOutputIt> >
-        init_agent;
+    using scan_tile_state_t = typename rbk_agent_t::ScanTileState;
+    using init_agent_t = InitAgent<scan_tile_state_t, Size, NumRunsOutputIt>;
 
-    AgentPlan reduce_by_key_plan = reduce_by_key_agent::get_plan(stream);
-    AgentPlan init_plan          = init_agent::get_plan();
+    // Create PtxPlans and AgentPlans:
+    const auto init_ptx_plan = typename init_agent_t::PtxPlan{};
+    const auto init_agent_plan = core::AgentPlan{init_ptx_plan};
+
+    const auto rbk_agent_plan = core::AgentPlanFromTunings<rbk_agent_t>::get();
 
     // Number of input tiles
-    int  tile_size = reduce_by_key_plan.items_per_tile;
-    Size num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+    const int  tile_size = rbk_agent_plan.items_per_tile;
+    const Size num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
 
-    size_t vshmem_size = core::vshmem_size(reduce_by_key_plan.shared_memory_size,
-                                           num_tiles);
+    const std::size_t vshmem_size =
+      core::vshmem_size(rbk_agent_plan.shared_memory_size, num_tiles);
 
-    size_t allocation_sizes[2] = {9, vshmem_size};
-    status = ScanTileState::AllocationSize(static_cast<int>(num_tiles), allocation_sizes[0]);
+    std::size_t allocation_sizes[2] = {9, vshmem_size};
+    status = scan_tile_state_t::AllocationSize(static_cast<int>(num_tiles),
+                                               allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    void *allocations[2] = {NULL, NULL};
+    void *allocations[2] = {nullptr, nullptr};
     status = cub::AliasTemporaries(d_temp_storage,
                                    temp_storage_bytes,
                                    allocations,
@@ -932,33 +891,45 @@ namespace __reduce_by_key {
       return status;
     }
 
-    ScanTileState tile_state;
-    status = tile_state.Init(static_cast<int>(num_tiles), allocations[0], allocation_sizes[0]);
+    scan_tile_state_t tile_state;
+    status = tile_state.Init(static_cast<int>(num_tiles),
+                             allocations[0],
+                             allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    init_agent ia(init_plan, num_tiles, stream, "reduce_by_key::init_agent", debug_sync);
-    ia.launch(tile_state, num_tiles, num_runs_output_it);
-    CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
-
-    char *vshmem_ptr = vshmem_size > 0 ? (char *)allocations[1] : NULL;
-
-    reduce_by_key_agent rbka(reduce_by_key_plan,
-                             num_items,
+    using init_agent_launcher_t = core::AgentLauncher<init_agent_t>;
+    init_agent_launcher_t ia{init_agent_plan,
+                             num_tiles,
                              stream,
-                             vshmem_ptr,
-                             "reduce_by_keys::reduce_by_key_agent",
-                             debug_sync);
-    rbka.launch(keys_input_it,
-                values_input_it,
-                keys_output_it,
-                values_output_it,
-                num_runs_output_it,
-                tile_state,
-                equality_op,
-                reduction_op,
-                num_items,
-                num_tiles);
+                             "reduce_by_key::init_agent",
+                             debug_sync};
+    ia.launch_ptx_plan(init_ptx_plan, tile_state, num_tiles, num_runs_output_it);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
+
+    char *vshmem_ptr = vshmem_size > 0
+                         ? reinterpret_cast<char *>(allocations[1])
+                         : nullptr;
+
+    using rbk_agent_launcher_t = core::AgentLauncher<rbk_agent_t>;
+    rbk_agent_launcher_t rbka{rbk_agent_plan,
+                              num_items,
+                              stream,
+                              vshmem_ptr,
+                              "reduce_by_keys::reduce_by_key_agent",
+                              debug_sync};
+    rbka.launch_ptx_dispatch(typename rbk_agent_t::Tunings{},
+                             keys_input_it,
+                             values_input_it,
+                             keys_output_it,
+                             values_output_it,
+                             num_runs_output_it,
+                             tile_state,
+                             equality_op,
+                             reduction_op,
+                             num_items,
+                             num_tiles);
+    CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
+
     return status;
   }
 
@@ -969,7 +940,7 @@ namespace __reduce_by_key {
             typename ValuesOutputIt,
             typename EqualityOp,
             typename ReductionOp>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeysOutputIt, ValuesOutputIt>
   reduce_by_key(execution_policy<Derived>& policy,
                 KeysInputIt                keys_first,
@@ -1078,32 +1049,36 @@ reduce_by_key(execution_policy<Derived> &policy,
               BinaryPred                 binary_pred,
               BinaryOp                   binary_op)
 {
-  pair<KeyOutputIt, ValOutputIt> ret = thrust::make_pair(keys_output, values_output);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __reduce_by_key::reduce_by_key(policy,
-                                         keys_first,
-                                         keys_last,
-                                         values_first,
-                                         keys_output,
-                                         values_output,
-                                         binary_pred,
-                                         binary_op);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::reduce_by_key(cvt_to_seq(derived_cast(policy)),
-                                keys_first,
-                                keys_last,
-                                values_first,
-                                keys_output,
-                                values_output,
-                                binary_pred,
-                                binary_op);
+  using result_t = pair<KeyOutputIt, ValOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __reduce_by_key::reduce_by_key(policy,
+                                          keys_first,
+                                          keys_last,
+                                          values_first,
+                                          keys_output,
+                                          values_output,
+                                          binary_pred,
+                                          binary_op);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_output, values_output);
+#else
+    return thrust::reduce_by_key(cvt_to_seq(derived_cast(policy)),
+                                 keys_first,
+                                 keys_last,
+                                 values_first,
+                                 keys_output,
+                                 values_output,
+                                 binary_pred,
+                                 binary_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 

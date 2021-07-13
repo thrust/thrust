@@ -43,7 +43,7 @@ namespace __copy {
   template <class Derived,
             class InputIt,
             class OutputIt>
-  OutputIt THRUST_RUNTIME_FUNCTION
+  OutputIt CUB_RUNTIME_FUNCTION
   device_to_device(execution_policy<Derived>& policy,
                    InputIt                    first,
                    InputIt                    last,

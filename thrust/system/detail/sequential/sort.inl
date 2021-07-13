@@ -21,6 +21,10 @@
 #include <thrust/system/detail/sequential/stable_merge_sort.h>
 #include <thrust/system/detail/sequential/stable_primitive_sort.h>
 
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+#include <cub/detail/target.cuh>
+#endif
+
 namespace thrust
 {
 namespace system
@@ -162,14 +166,20 @@ void stable_sort(sequential::execution_policy<DerivedPolicy> &exec,
 {
 
   // the compilation time of stable_primitive_sort is too expensive to use within a single CUDA thread
-#ifndef __CUDA_ARCH__
-  typedef typename thrust::iterator_traits<RandomAccessIterator>::value_type KeyType;
-  sort_detail::use_primitive_sort<KeyType,StrictWeakOrdering> use_primitive_sort;
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+  NV_IF_TARGET(NV_IS_HOST, (
+    using KeyType = thrust::iterator_value_t<RandomAccessIterator>;
+    sort_detail::use_primitive_sort<KeyType, StrictWeakOrdering> use_primitive_sort;
+    sort_detail::stable_sort(exec, first, last, comp, use_primitive_sort);
+  ), ( // NV_IS_DEVICE:
+    thrust::detail::false_type use_primitive_sort;
+    sort_detail::stable_sort(exec, first, last, comp, use_primitive_sort);
+  ));
 #else
-  thrust::detail::false_type use_primitive_sort;
-#endif
-
+  using KeyType = thrust::iterator_value_t<RandomAccessIterator>;
+  sort_detail::use_primitive_sort<KeyType, StrictWeakOrdering> use_primitive_sort;
   sort_detail::stable_sort(exec, first, last, comp, use_primitive_sort);
+#endif
 }
 
 
@@ -186,14 +196,21 @@ void stable_sort_by_key(sequential::execution_policy<DerivedPolicy> &exec,
 {
 
   // the compilation time of stable_primitive_sort_by_key is too expensive to use within a single CUDA thread
-#ifndef __CUDA_ARCH__
-  typedef typename thrust::iterator_traits<RandomAccessIterator1>::value_type KeyType;
-  sort_detail::use_primitive_sort<KeyType,StrictWeakOrdering> use_primitive_sort;
-#else
-  thrust::detail::false_type use_primitive_sort;
-#endif
 
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+  NV_IF_TARGET(NV_IS_HOST, (
+    using KeyType = thrust::iterator_value_t<RandomAccessIterator1>;
+    sort_detail::use_primitive_sort<KeyType, StrictWeakOrdering> use_primitive_sort;
+    sort_detail::stable_sort_by_key(exec, first1, last1, first2, comp, use_primitive_sort);
+  ), ( // NV_IS_DEVICE:
+    thrust::detail::false_type use_primitive_sort;
+    sort_detail::stable_sort_by_key(exec, first1, last1, first2, comp, use_primitive_sort);
+  ));
+#else
+  using KeyType = thrust::iterator_value_t<RandomAccessIterator1>;
+  sort_detail::use_primitive_sort<KeyType, StrictWeakOrdering> use_primitive_sort;
   sort_detail::stable_sort_by_key(exec, first1, last1, first2, comp, use_primitive_sort);
+#endif
 }
 
 

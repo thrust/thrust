@@ -36,13 +36,17 @@
 #include <thrust/system/cuda/detail/reverse.h>
 #include <thrust/system/cuda/detail/find.h>
 #include <thrust/system/cuda/detail/uninitialized_copy.h>
-#include <cub/device/device_partition.cuh>
 #include <thrust/system/cuda/detail/core/agent_launcher.h>
 #include <thrust/system/cuda/detail/par_to_seq.h>
 #include <thrust/partition.h>
 #include <thrust/pair.h>
 #include <thrust/distance.h>
 
+#include <cub/agent/single_pass_scan_operators.cuh> // cub::ScanTileState
+#include <cub/block/block_scan.cuh>
+#include <cub/detail/cdp_dispatch.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+#include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 
 namespace thrust
@@ -58,61 +62,34 @@ namespace __partition {
             cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS      = _BLOCK_THREADS,
-      ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD
-    };
-    static const cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
-    static const cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE   = BLOCK_THREADS * ITEMS_PER_THREAD;
+
+    static constexpr cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
+    static constexpr cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
   };    // struct PtxPolicy
 
-  template<class, class>
-  struct Tuning;
-
-  template<class T>
-  struct Tuning<sm35, T>
+  template <typename T>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    const static int INPUT_SIZE = sizeof(T);
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
 
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 10,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 10;
+    static constexpr int ITEMS_PER_THREAD =
+      CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+              CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T))));
 
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning<350>
-
-  template<class T>
-  struct Tuning<sm30, T>
-  {
-    const static int INPUT_SIZE = sizeof(T);
-
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(3, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning<300>
+    using Policy = PtxPolicy<128,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning350
 
   template<int T>
   struct __tag{};
-
 
   struct no_stencil_tag_    {};
   struct single_output_tag_
@@ -133,36 +110,33 @@ namespace __partition {
             class NumSelectedOutIt>
   struct PartitionAgent
   {
-    typedef typename iterator_traits<ItemsIt>::value_type   item_type;
-    typedef typename iterator_traits<StencilIt>::value_type stencil_type;
+    using item_type    = typename iterator_traits<ItemsIt>::value_type;
+    using stencil_type = typename iterator_traits<StencilIt>::value_type;
 
+    using ScanTileState = cub::ScanTileState<Size>;
 
-    typedef cub::ScanTileState<Size> ScanTileState;
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning350<item_type>>;
 
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, item_type>::type
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch,item_type> tuning;
+      using ItemsLoadIt = typename core::LoadIterator<PtxPlan, ItemsIt>::type;
+      using StencilLoadIt =
+        typename core::LoadIterator<PtxPlan, StencilIt>::type;
+      using BlockLoadItems =
+        typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type;
+      using BlockLoadStencil =
+        typename core::BlockLoad<PtxPlan, StencilLoadIt>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, ItemsIt>::type   ItemsLoadIt;
-      typedef typename core::LoadIterator<PtxPlan, StencilIt>::type StencilLoadIt;
-
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadIt>::type   BlockLoadItems;
-      typedef typename core::BlockLoad<PtxPlan, StencilLoadIt>::type BlockLoadStencil;
-
-      typedef cub::TilePrefixCallbackOp<Size,
-                                        cub::Sum,
-                                        ScanTileState,
-                                        Arch::ver>
-          TilePrefixCallback;
-      typedef cub::BlockScan<Size,
-                             PtxPlan::BLOCK_THREADS,
-                             PtxPlan::SCAN_ALGORITHM,
-                             1,
-                             1,
-                             Arch::ver>
-          BlockScan;
-
+      using TilePrefixCallback = cub::
+        TilePrefixCallbackOp<Size, cub::Sum, ScanTileState, Tuning::ptx_arch>;
+      using BlockScan = cub::BlockScan<Size,
+                                       PtxPlan::BLOCK_THREADS,
+                                       PtxPlan::SCAN_ALGORITHM,
+                                       1,
+                                       1,
+                                       Tuning::ptx_arch>;
 
       union TempStorage
       {
@@ -178,28 +152,26 @@ namespace __partition {
         core::uninitialized_array<item_type, PtxPlan::ITEMS_PER_TILE> raw_exchange;
       };    // union TempStorage
     };    // struct PtxPlan
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
 
-    typedef typename ptx_plan::ItemsLoadIt        ItemsLoadIt;
-    typedef typename ptx_plan::StencilLoadIt      StencilLoadIt;
-    typedef typename ptx_plan::BlockLoadItems     BlockLoadItems;
-    typedef typename ptx_plan::BlockLoadStencil   BlockLoadStencil;
-    typedef typename ptx_plan::TilePrefixCallback TilePrefixCallback;
-    typedef typename ptx_plan::BlockScan          BlockScan;
-    typedef typename ptx_plan::TempStorage        TempStorage;
-
-    enum
-    {
-      SINGLE_OUTPUT    = thrust::detail::is_same<RejectedOutIt, single_output_tag>::value,
-      USE_STENCIL      = !thrust::detail::is_same<StencilIt, no_stencil_tag>::value,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE
-    };
-
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using ItemsLoadIt        = typename ActivePtxPlan::ItemsLoadIt;
+      using StencilLoadIt      = typename ActivePtxPlan::StencilLoadIt;
+      using BlockLoadItems     = typename ActivePtxPlan::BlockLoadItems;
+      using BlockLoadStencil   = typename ActivePtxPlan::BlockLoadStencil;
+      using TilePrefixCallback = typename ActivePtxPlan::TilePrefixCallback;
+      using BlockScan          = typename ActivePtxPlan::BlockScan;
+      using TempStorage        = typename ActivePtxPlan::TempStorage;
+
+      static constexpr bool SINGLE_OUTPUT =
+        thrust::detail::is_same<RejectedOutIt, single_output_tag>::value;
+      static constexpr bool USE_STENCIL =
+        !thrust::detail::is_same<StencilIt, no_stencil_tag>::value;
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
       //---------------------------------------------------------------------
       // Per-thread fields
       //---------------------------------------------------------------------
@@ -548,6 +520,7 @@ namespace __partition {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(ItemsIt          items,
                        StencilIt        stencil,
                        SelectedOutIt    selected_out,
@@ -559,18 +532,19 @@ namespace __partition {
                        int              num_tiles,
                        char *           shmem)
     {
-      TempStorage &storage = *reinterpret_cast<TempStorage *>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(storage,
-           tile_state,
-           core::make_load_iterator(ptx_plan(), items),
-           core::make_load_iterator(ptx_plan(), stencil),
-           selected_out,
-           rejected_out,
-           predicate,
-           num_items,
-           num_tiles,
-           num_selected_out);
+      impl<ActivePtxPlan>{storage,
+                          tile_state,
+                          core::make_load_iterator(ActivePtxPlan(), items),
+                          core::make_load_iterator(ActivePtxPlan(), stencil),
+                          selected_out,
+                          rejected_out,
+                          predicate,
+                          num_items,
+                          num_tiles,
+                          num_selected_out};
     }
   };       // struct PartitionAgent
 
@@ -579,16 +553,13 @@ namespace __partition {
             class Size>
   struct InitAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<128> {};
-
-
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(ScanTileState tile_state,
                        Size          num_tiles,
                        NumSelectedIt num_selected_out,
@@ -608,7 +579,7 @@ namespace __partition {
             class Predicate,
             class Size,
             class NumSelectedOutIt>
-  static cudaError_t THRUST_RUNTIME_FUNCTION
+  static cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void *           d_temp_storage,
             size_t &         temp_storage_bytes,
             ItemsIt          items,
@@ -621,81 +592,98 @@ namespace __partition {
             cudaStream_t     stream,
             bool             debug_sync)
   {
-    using core::AgentLauncher;
-    using core::AgentPlan;
-    using core::get_agent_plan;
-
-    typedef AgentLauncher<
-        PartitionAgent<ItemsIt,
-                       StencilIt,
-                       SelectedOutIt,
-                       RejectedOutIt,
-                       Predicate,
-                       Size,
-                       NumSelectedOutIt> >
-        partition_agent;
-
-    typedef typename partition_agent::ScanTileState ScanTileState;
-
-    typedef AgentLauncher<
-        InitAgent<ScanTileState, NumSelectedOutIt, Size> >
-        init_agent;
-
-
-    using core::get_plan;
-    typename get_plan<init_agent>::type      init_plan      = init_agent::get_plan();
-    typename get_plan<partition_agent>::type partition_plan = partition_agent::get_plan(stream);
-
-    int tile_size = partition_plan.items_per_tile;
-    size_t num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
-
-    size_t vshmem_storage = core::vshmem_size(partition_plan.shared_memory_size,
-                                              num_tiles);
-
     cudaError_t status = cudaSuccess;
-    if (num_items == 0)
-      return status;
 
-    size_t allocation_sizes[2] = {0, vshmem_storage};
-    status = ScanTileState::AllocationSize(static_cast<int>(num_tiles), allocation_sizes[0]);
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
+
+    if (num_items == 0)
+    {
+      return status;
+    }
+
+    // Declare type aliases for agents, etc:
+    using partition_agent_t = PartitionAgent<ItemsIt,
+                                             StencilIt,
+                                             SelectedOutIt,
+                                             RejectedOutIt,
+                                             Predicate,
+                                             Size,
+                                             NumSelectedOutIt>;
+    using scan_tile_state_t = typename partition_agent_t::ScanTileState;
+    using init_agent_t = InitAgent<scan_tile_state_t, NumSelectedOutIt, Size>;
+
+    // Create PtxPlans and AgentPlans:
+    const auto init_ptx_plan = typename init_agent_t::PtxPlan{};
+    const auto init_agent_plan = core::AgentPlan{init_ptx_plan};
+
+    const auto partition_agent_plan =
+      core::AgentPlanFromTunings<partition_agent_t>::get();
+
+    // Figure out temp_storage_size:
+    const int tile_size = partition_agent_plan.items_per_tile;
+    const std::size_t num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
+
+    const std::size_t vshmem_storage =
+      core::vshmem_size(partition_agent_plan.shared_memory_size, num_tiles);
+
+    std::size_t allocation_sizes[2] = {0, vshmem_storage};
+    status = scan_tile_state_t::AllocationSize(static_cast<int>(num_tiles),
+                                               allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-
-    void* allocations[2] = {NULL, NULL};
+    void *allocations[2] = {nullptr, nullptr};
     status = cub::AliasTemporaries(d_temp_storage,
                                    temp_storage_bytes,
                                    allocations,
                                    allocation_sizes);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    if (d_temp_storage == NULL)
+    if (d_temp_storage == nullptr)
     {
       return status;
     }
 
-    ScanTileState tile_status;
-    status = tile_status.Init(static_cast<int>(num_tiles), allocations[0], allocation_sizes[0]);
+    scan_tile_state_t tile_status;
+    status = tile_status.Init(static_cast<int>(num_tiles),
+                              allocations[0],
+                              allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    init_agent ia(init_plan, num_tiles, stream, "partition::init_agent", debug_sync);
-
-    char *vshmem_ptr = vshmem_storage > 0 ? (char *)allocations[1] : NULL;
-
-    partition_agent pa(partition_plan, num_items, stream, vshmem_ptr, "partition::partition_agent", debug_sync);
-
-    ia.launch(tile_status, num_tiles, num_selected_out);
+    using init_agent_launcher = core::AgentLauncher<init_agent_t>;
+    init_agent_launcher ia{init_agent_plan,
+                           num_tiles,
+                           stream,
+                           "partition::init_agent",
+                           debug_sync};
+    ia.launch_ptx_plan(init_ptx_plan, tile_status, num_tiles, num_selected_out);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    pa.launch(items,
-              stencil,
-              selected_out,
-              rejected_out,
-              predicate,
-              num_items,
-              num_selected_out,
-              tile_status,
-              num_tiles);
+    char *vshmem_ptr = vshmem_storage > 0
+                         ? reinterpret_cast<char *>(allocations[1])
+                         : nullptr;
+
+    using partition_agent_launcher = core::AgentLauncher<partition_agent_t>;
+    partition_agent_launcher pa{partition_agent_plan,
+                                num_items,
+                                stream,
+                                vshmem_ptr,
+                                "partition::partition_agent",
+                                debug_sync};
+    pa.launch_ptx_dispatch(typename partition_agent_t::Tunings{},
+                           items,
+                           stencil,
+                           selected_out,
+                           rejected_out,
+                           predicate,
+                           num_items,
+                           num_selected_out,
+                           tile_status,
+                           num_tiles);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
+
     return status;
 
   }
@@ -706,7 +694,7 @@ namespace __partition {
             typename SelectedOutIt,
             typename RejectedOutIt,
             typename Predicate>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<SelectedOutIt, RejectedOutIt>
   partition(execution_policy<Derived>& policy,
             InputIt                    first,
@@ -792,7 +780,7 @@ namespace __partition {
             typename Iterator,
             typename StencilIt,
             typename Predicate>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   Iterator partition_inplace(execution_policy<Derived>& policy,
                              Iterator                   first,
                              Iterator                   last,
@@ -846,30 +834,34 @@ partition_copy(execution_policy<Derived> &policy,
                RejectedOutIt              rejected_result,
                Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                            first,
-                            last,
-                            stencil,
-                            selected_result,
-                            rejected_result,
-                            predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 last,
-                                 stencil,
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  stencil,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  last,
+                                  stencil,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -886,29 +878,33 @@ partition_copy(execution_policy<Derived> &policy,
                RejectedOutIt              rejected_result,
                Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                                 first,
-                                 last,
-                                 __partition::no_stencil_tag(),
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 last,
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  __partition::no_stencil_tag(),
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::partition_copy(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  last,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -925,29 +921,33 @@ stable_partition_copy(execution_policy<Derived> &policy,
                       RejectedOutIt              rejected_result,
                       Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                                 first,
-                                 last,
-                                 __partition::no_stencil_tag(),
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
-                                        first,
-                                        last,
-                                        selected_result,
-                                        rejected_result,
-                                        predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  __partition::no_stencil_tag(),
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
+                                         first,
+                                         last,
+                                         selected_result,
+                                         rejected_result,
+                                         predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -966,30 +966,34 @@ stable_partition_copy(execution_policy<Derived> &policy,
                       RejectedOutIt              rejected_result,
                       Predicate                  predicate)
 {
-  pair<SelectedOutIt, RejectedOutIt> ret = thrust::make_pair(selected_result, rejected_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition(policy,
-                                 first,
-                                 last,
-                                 stencil,
-                                 selected_result,
-                                 rejected_result,
-                                 predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
-                                        first,
-                                        last,
-                                        stencil,
-                                        selected_result,
-                                        rejected_result,
-                                        predicate);
+  using result_t = pair<SelectedOutIt, RejectedOutIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition(policy,
+                                  first,
+                                  last,
+                                  stencil,
+                                  selected_result,
+                                  rejected_result,
+                                  predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(selected_result, rejected_result);
+#else
+    return thrust::stable_partition_copy(cvt_to_seq(derived_cast(policy)),
+                                         first,
+                                         last,
+                                         stencil,
+                                         selected_result,
+                                         rejected_result,
+                                         predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 /// inplace
@@ -1006,22 +1010,30 @@ partition(execution_policy<Derived> &policy,
           StencilIt                  stencil,
           Predicate                  predicate)
 {
-  Iterator ret = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition_inplace(policy, first, last, stencil, predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition(cvt_to_seq(derived_cast(policy)),
-                            first,
-                            last,
-                            stencil,
-                            predicate);
+  using result_t = Iterator;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition_inplace(policy,
+                                          first,
+                                          last,
+                                          stencil,
+                                          predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::partition(cvt_to_seq(derived_cast(policy)),
+                             first,
+                             last,
+                             stencil,
+                             predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -1034,25 +1046,29 @@ partition(execution_policy<Derived> &policy,
           Iterator                   last,
           Predicate                  predicate)
 {
-  Iterator ret = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __partition::partition_inplace(policy,
-                                         first,
-                                         last,
-                                         __partition::no_stencil_tag(),
-                                         predicate);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::partition(cvt_to_seq(derived_cast(policy)),
-                            first,
-                            last,
-                            predicate);
+  using result_t = Iterator;
+
+  auto run_par = [&]() -> result_t {
+    return __partition::partition_inplace(policy,
+                                          first,
+                                          last,
+                                          __partition::no_stencil_tag(),
+                                          predicate);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::partition(cvt_to_seq(derived_cast(policy)),
+                             first,
+                             last,
+                             predicate);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -1067,30 +1083,36 @@ stable_partition(execution_policy<Derived> &policy,
                  StencilIt                  stencil,
                  Predicate                  predicate)
 {
-  Iterator result = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    result = __partition::partition_inplace(policy,
+  using result_t = Iterator;
+
+  auto run_par = [&]() -> result_t {
+    auto result = __partition::partition_inplace(policy,
+                                                 first,
+                                                 last,
+                                                 stencil,
+                                                 predicate);
+
+    // partition returns rejected values in reverse order
+    // so reverse the rejected elements to make it stable
+    cuda_cub::reverse(policy, result, last);
+
+    return result;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
                                     first,
                                     last,
                                     stencil,
                                     predicate);
-
-    // partition returns rejected values in reverese order
-    // so reverse the rejected elements to make it stable
-    cuda_cub::reverse(policy, result, last);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    result = thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
-                                      first,
-                                      last,
-                                      stencil,
-                                      predicate);
 #endif
-  }
-  return result;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 __thrust_exec_check_disable__
@@ -1103,29 +1125,34 @@ stable_partition(execution_policy<Derived> &policy,
                  Iterator                   last,
                  Predicate                  predicate)
 {
-  Iterator result = first;
-  if (__THRUST_HAS_CUDART__)
-  {
-    result = __partition::partition_inplace(policy,
-                                       first,
-                                       last,
-                                       __partition::no_stencil_tag(),
-                                       predicate);
+  using result_t = Iterator;
 
-    // partition returns rejected values in reverese order
+  auto run_par = [&]() -> result_t {
+    auto result = __partition::partition_inplace(policy,
+                                                 first,
+                                                 last,
+                                                 __partition::no_stencil_tag(),
+                                                 predicate);
+
+    // partition returns rejected values in reverse order
     // so reverse the rejected elements to make it stable
     cuda_cub::reverse(policy, result, last);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    result = thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
-                                      first,
-                                      last,
-                                      predicate);
+    return result;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return first;
+#else
+    return thrust::stable_partition(cvt_to_seq(derived_cast(policy)),
+                                    first,
+                                    last,
+                                    predicate);
 #endif
-  }
-  return result;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

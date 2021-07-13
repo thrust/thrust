@@ -81,11 +81,5 @@ cvt_to_seq(Policy& policy)
   return cvt_to_seq_impl<Policy>::doit(policy);
 }
 
-#if __THRUST_HAS_CUDART__
-#define THRUST_CUDART_DISPATCH par
-#else
-#define THRUST_CUDART_DISPATCH seq
-#endif
-
 } // namespace cuda_
 } // end namespace thrust

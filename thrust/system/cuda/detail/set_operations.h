@@ -42,6 +42,9 @@
 #include <thrust/distance.h>
 #include <thrust/detail/alignment.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+
 namespace thrust
 {
 
@@ -207,103 +210,85 @@ namespace __set_operations {
             cub::BlockScanAlgorithm  _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS    = _BLOCK_THREADS,
-      ITEMS_PER_THREAD = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = _BLOCK_THREADS * _ITEMS_PER_THREAD - 1
-    };
+    static constexpr int BLOCK_THREADS    = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE = BLOCK_THREADS * ITEMS_PER_THREAD - 1;
 
-    static const cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::BlockScanAlgorithm  SCAN_ALGORITHM  = _SCAN_ALGORITHM;
-  };    // PtxPolicy
-
-  template<class Arch, class T, class U>
-  struct Tuning;
+    static constexpr cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static constexpr cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+  }; // PtxPolicy
 
   namespace mpl = thrust::detail::mpl::math;
 
-  template<class T, class U>
-  struct Tuning<sm30,T,U>
+  template <typename T, typename U>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    enum
-    {
-      MAX_INPUT_BYTES             = mpl::max<size_t, sizeof(T), sizeof(U)>::value,
-      COMBINED_INPUT_BYTES        = sizeof(T),    // + sizeof(Value),
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = mpl::min<
-          int,
-          NOMINAL_4B_ITEMS_PER_THREAD,
-          mpl::max<
-              int,
-              1,
-              ((NOMINAL_4B_ITEMS_PER_THREAD * 4) +
-               COMBINED_INPUT_BYTES - 1) /
-                  COMBINED_INPUT_BYTES>::value>::value,
-    };
+    static constexpr int MAX_INPUT_BYTES =
+      static_cast<int>(mpl::max<size_t, sizeof(T), sizeof(U)>::value);
+    static constexpr int COMBINED_INPUT_BYTES =
+      static_cast<int>(sizeof(T)); // + sizeof(Value);
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 7;
+    static constexpr int ITEMS_PER_THREAD            = mpl::min<
+      int,
+      NOMINAL_4B_ITEMS_PER_THREAD,
+      mpl::max<int,
+               1,
+               ((NOMINAL_4B_ITEMS_PER_THREAD * 4) + COMBINED_INPUT_BYTES - 1) /
+                 COMBINED_INPUT_BYTES>::value>::value;
 
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  }; // tuning sm30
+    using Policy = PtxPolicy<128,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_DEFAULT,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning350
 
-  template<class T, class U>
-  struct Tuning<sm52,T,U>
+  template<typename T, typename U>
+  struct Tuning520 : cub::detail::ptx_base<520>
   {
-    enum
-    {
-      MAX_INPUT_BYTES             = mpl::max<size_t, sizeof(T), sizeof(U)>::value,
-      COMBINED_INPUT_BYTES        = sizeof(T), // + sizeof(U),
-      NOMINAL_4B_ITEMS_PER_THREAD = 15,
-      ITEMS_PER_THREAD            = mpl::min<
-          int,
-          NOMINAL_4B_ITEMS_PER_THREAD,
-          mpl::max<
-              int,
-              1,
-              ((NOMINAL_4B_ITEMS_PER_THREAD * 4) +
-               COMBINED_INPUT_BYTES - 1) /
-                  COMBINED_INPUT_BYTES>::value>::value,
-    };
+    static constexpr int MAX_INPUT_BYTES =
+      static_cast<int>(mpl::max<size_t, sizeof(T), sizeof(U)>::value);
+    static constexpr int COMBINED_INPUT_BYTES =
+      static_cast<int>(sizeof(T)); // + sizeof(U);
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 15;
+    static constexpr int ITEMS_PER_THREAD            = mpl::min<
+      int,
+      NOMINAL_4B_ITEMS_PER_THREAD,
+      mpl::max<int,
+               1,
+               ((NOMINAL_4B_ITEMS_PER_THREAD * 4) + COMBINED_INPUT_BYTES - 1) /
+                 COMBINED_INPUT_BYTES>::value>::value;
 
-    typedef PtxPolicy<256,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  }; // tuning sm52
+    using Policy = PtxPolicy<256,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_DEFAULT,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning520
 
-  template<class T, class U>
-  struct Tuning<sm60,T,U>
+  template <typename T, typename U>
+  struct Tuning600 : cub::detail::ptx_base<600>
   {
-    enum
-    {
-      MAX_INPUT_BYTES             = mpl::max<size_t, sizeof(T), sizeof(U)>::value,
-      COMBINED_INPUT_BYTES        = sizeof(T), // + sizeof(U),
-      NOMINAL_4B_ITEMS_PER_THREAD = 19,
-      ITEMS_PER_THREAD            = mpl::min<
-          int,
-          NOMINAL_4B_ITEMS_PER_THREAD,
-          mpl::max<
-              int,
-              1,
-              ((NOMINAL_4B_ITEMS_PER_THREAD * 4) +
-               COMBINED_INPUT_BYTES - 1) /
-                  COMBINED_INPUT_BYTES>::value>::value,
-    };
+    static constexpr int MAX_INPUT_BYTES =
+      static_cast<int>(mpl::max<size_t, sizeof(T), sizeof(U)>::value);
+    static constexpr int COMBINED_INPUT_BYTES =
+      static_cast<int>(sizeof(T)); // + sizeof(U);
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 19;
+    static constexpr int ITEMS_PER_THREAD            = mpl::min<
+      int,
+      NOMINAL_4B_ITEMS_PER_THREAD,
+      mpl::max<int,
+               1,
+               ((NOMINAL_4B_ITEMS_PER_THREAD * 4) + COMBINED_INPUT_BYTES - 1) /
+                 COMBINED_INPUT_BYTES>::value>::value;
 
-    typedef PtxPolicy<512,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  }; // tuning sm60
+    using Policy = PtxPolicy<512,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_DEFAULT,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning600
 
   template <class KeysIt1,
             class KeysIt2,
@@ -317,44 +302,42 @@ namespace __set_operations {
             class HAS_VALUES>
   struct SetOpAgent
   {
-    typedef typename iterator_traits<KeysIt1>::value_type  key1_type;
-    typedef typename iterator_traits<KeysIt2>::value_type  key2_type;
-    typedef typename iterator_traits<ValuesIt1>::value_type value1_type;
-    typedef typename iterator_traits<ValuesIt2>::value_type value2_type;
+    using key1_type   = typename iterator_traits<KeysIt1>::value_type;
+    using key2_type   = typename iterator_traits<KeysIt2>::value_type;
+    using value1_type = typename iterator_traits<ValuesIt1>::value_type;
+    using value2_type = typename iterator_traits<ValuesIt2>::value_type;
 
-    typedef key1_type  key_type;
-    typedef value1_type value_type;
+    using key_type   = key1_type;
+    using value_type = value1_type;
 
-    typedef cub::ScanTileState<Size> ScanTileState;
+    using ScanTileState = cub::ScanTileState<Size>;
 
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, key_type, value_type>::type
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning600<key_type, value_type>,
+                                           Tuning520<key_type, value_type>,
+                                           Tuning350<key_type, value_type>>;
+
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch, key_type, value_type> tuning;
+      using KeysLoadIt1 = typename core::LoadIterator<PtxPlan, KeysIt1>::type;
+      using KeysLoadIt2 = typename core::LoadIterator<PtxPlan, KeysIt2>::type;
+      using ValuesLoadIt1 =
+        typename core::LoadIterator<PtxPlan, ValuesIt1>::type;
+      using ValuesLoadIt2 =
+        typename core::LoadIterator<PtxPlan, ValuesIt2>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, KeysIt1>::type   KeysLoadIt1;
-      typedef typename core::LoadIterator<PtxPlan, KeysIt2>::type   KeysLoadIt2;
-      typedef typename core::LoadIterator<PtxPlan, ValuesIt1>::type ValuesLoadIt1;
-      typedef typename core::LoadIterator<PtxPlan, ValuesIt2>::type ValuesLoadIt2;
+      using TilePrefixCallback = cub::TilePrefixCallbackOp<Size,
+                                                           cub::Sum,
+                                                           ScanTileState,
+                                                           Tuning::ptx_arch>;
 
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadIt1>::type   BlockLoadKeys1;
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadIt2>::type   BlockLoadKeys2;
-      typedef typename core::BlockLoad<PtxPlan, ValuesLoadIt1>::type BlockLoadValues1;
-      typedef typename core::BlockLoad<PtxPlan, ValuesLoadIt2>::type BlockLoadValues2;
-
-      typedef cub::TilePrefixCallbackOp<Size,
-                                        cub::Sum,
-                                        ScanTileState,
-                                        Arch::ver>
-          TilePrefixCallback;
-
-      typedef cub::BlockScan<Size,
-                             PtxPlan::BLOCK_THREADS,
-                             PtxPlan::SCAN_ALGORITHM,
-                             1,
-                             1,
-                             Arch::ver>
-          BlockScan;
+      using BlockScan = cub::BlockScan<Size,
+                                       PtxPlan::BLOCK_THREADS,
+                                       PtxPlan::SCAN_ALGORITHM,
+                                       1,
+                                       1,
+                                       Tuning::ptx_arch>;
 
       // gather required temporary storage in a union
       //
@@ -371,12 +354,6 @@ namespace __set_operations {
           core::uninitialized_array<int, PtxPlan::BLOCK_THREADS> offset;
           union
           {
-            // FIXME These don't appear to be used anywhere?
-            typename BlockLoadKeys1::TempStorage   load_keys1;
-            typename BlockLoadKeys2::TempStorage   load_keys2;
-            typename BlockLoadValues1::TempStorage load_values1;
-            typename BlockLoadValues2::TempStorage load_values2;
-
             // Allocate extra shmem than truely neccessary
             // This will permit to avoid range checks in
             // serial set operations, e.g. serial_set_difference
@@ -394,31 +371,22 @@ namespace __set_operations {
       };    // union TempStorage
     };      // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::KeysLoadIt1   KeysLoadIt1;
-    typedef typename ptx_plan::KeysLoadIt2   KeysLoadIt2;
-    typedef typename ptx_plan::ValuesLoadIt1 ValuesLoadIt1;
-    typedef typename ptx_plan::ValuesLoadIt2 ValuesLoadIt2;
-
-    typedef typename ptx_plan::BlockLoadKeys1   BlockLoadKeys1;
-    typedef typename ptx_plan::BlockLoadKeys2   BlockLoadKeys2;
-    typedef typename ptx_plan::BlockLoadValues1 BlockLoadValues1;
-    typedef typename ptx_plan::BlockLoadValues2 BlockLoadValues2;
-
-    typedef typename ptx_plan::TilePrefixCallback TilePrefixCallback;
-    typedef typename ptx_plan::BlockScan BlockScan;
-
-    typedef typename ptx_plan::TempStorage TempStorage;
-
-    enum
-    {
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using KeysLoadIt1   = typename ActivePtxPlan::KeysLoadIt1;
+      using KeysLoadIt2   = typename ActivePtxPlan::KeysLoadIt2;
+      using ValuesLoadIt1 = typename ActivePtxPlan::ValuesLoadIt1;
+      using ValuesLoadIt2 = typename ActivePtxPlan::ValuesLoadIt2;
+
+      using TilePrefixCallback = typename ActivePtxPlan::TilePrefixCallback;
+      using BlockScan          = typename ActivePtxPlan::BlockScan;
+
+      using TempStorage = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+
       //---------------------------------------------------------------------
       // Per-thread fields
       //---------------------------------------------------------------------
@@ -761,10 +729,10 @@ namespace __set_operations {
            std::size_t * output_count_)
           : storage(storage_),
             tile_state(tile_state_),
-            keys1_in(core::make_load_iterator(ptx_plan(), keys1_)),
-            keys2_in(core::make_load_iterator(ptx_plan(), keys2_)),
-            values1_in(core::make_load_iterator(ptx_plan(), values1_)),
-            values2_in(core::make_load_iterator(ptx_plan(), values2_)),
+            keys1_in(core::make_load_iterator(ActivePtxPlan{}, keys1_)),
+            keys2_in(core::make_load_iterator(ActivePtxPlan{}, keys2_)),
+            values1_in(core::make_load_iterator(ActivePtxPlan{}, values1_)),
+            values2_in(core::make_load_iterator(ActivePtxPlan{}, values2_)),
             keys1_count(keys1_count_),
             keys2_count(keys2_count_),
             keys_out(keys_out_),
@@ -792,6 +760,7 @@ namespace __set_operations {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(KeysIt1        keys1,
                        KeysIt2        keys2,
                        ValuesIt1      values1,
@@ -807,22 +776,23 @@ namespace __set_operations {
                        ScanTileState tile_state,
                        char *        shmem)
     {
-      TempStorage &storage = *reinterpret_cast<TempStorage *>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(storage,
-           tile_state,
-           keys1,
-           keys2,
-           values1,
-           values2,
-           keys1_count,
-           keys2_count,
-           keys_output,
-           values_output,
-           compare_op,
-           set_op,
-           partitions,
-           output_count);
+      impl<ActivePtxPlan>{storage,
+                          tile_state,
+                          keys1,
+                          keys2,
+                          values1,
+                          values2,
+                          keys1_count,
+                          keys2_count,
+                          keys_output,
+                          values_output,
+                          compare_op,
+                          set_op,
+                          partitions,
+                          output_count};
     }
   };    // struct SetOpAgent
 
@@ -832,15 +802,13 @@ namespace __set_operations {
             class CompareOp>
   struct PartitionAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<256> {};
-
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(KeysIt1 keys1,
                        KeysIt2 keys2,
                        Size    keys1_count,
@@ -872,15 +840,13 @@ namespace __set_operations {
             class Size>
   struct InitAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<128> {};
-
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(ScanTileState tile_state,
                        Size          num_tiles,
                        char * /*shmem*/)
@@ -1115,7 +1081,7 @@ namespace __set_operations {
             class ValuesOutputIt,
             class CompareOp,
             class SetOp>
-  cudaError_t THRUST_RUNTIME_FUNCTION
+  cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void *         d_temp_storage,
             size_t &       temp_storage_size,
             KeysIt1        keys1,
@@ -1132,55 +1098,62 @@ namespace __set_operations {
             cudaStream_t   stream,
             bool           debug_sync)
   {
-    Size keys_total = num_keys1 + num_keys2;
-    if (keys_total == 0)
-      return cudaErrorNotSupported;
-
     cudaError_t status = cudaSuccess;
 
-    using core::AgentPlan;
-    using core::AgentLauncher;
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_size = 0;
+    }
 
-    typedef AgentLauncher<
-        SetOpAgent<KeysIt1,
-                   KeysIt2,
-                   ValuesIt1,
-                   ValuesIt2,
-                   KeysOutputIt,
-                   ValuesOutputIt,
-                   Size,
-                   CompareOp,
-                   SetOp,
-                   HAS_VALUES> >
-        set_op_agent;
+    const Size keys_total = num_keys1 + num_keys2;
+    if (keys_total == 0)
+    {
+      return status;
+    }
 
-    typedef AgentLauncher<PartitionAgent<KeysIt1, KeysIt2, Size, CompareOp> >
-        partition_agent;
+    // Declare type aliases for agents, etc:
+    using set_op_agent_t = SetOpAgent<KeysIt1,
+                                      KeysIt2,
+                                      ValuesIt1,
+                                      ValuesIt2,
+                                      KeysOutputIt,
+                                      ValuesOutputIt,
+                                      Size,
+                                      CompareOp,
+                                      SetOp,
+                                      HAS_VALUES>;
 
-    typedef typename set_op_agent::ScanTileState ScanTileState;
-    typedef AgentLauncher<InitAgent<ScanTileState, Size> > init_agent;
+    using partition_agent_t = PartitionAgent<KeysIt1, KeysIt2, Size, CompareOp>;
 
+    using scan_tile_state_t = typename set_op_agent_t::ScanTileState;
+    using init_agent_t = InitAgent<scan_tile_state_t, Size>;
 
-    AgentPlan set_op_plan    = set_op_agent::get_plan(stream);
-    AgentPlan init_plan      = init_agent::get_plan();
-    AgentPlan partition_plan = partition_agent::get_plan();
+    // Create PtxPlans and AgentPlans:
+    const auto init_ptx_plan   = typename init_agent_t::PtxPlan{};
+    const auto init_agent_plan = core::AgentPlan{init_ptx_plan};
 
-    int  tile_size = set_op_plan.items_per_tile;
-    Size num_tiles = (keys_total + tile_size - 1) / tile_size;
+    const auto partition_ptx_plan   = typename init_agent_t::PtxPlan{};
+    const auto partition_agent_plan = core::AgentPlan{init_ptx_plan};
 
-    size_t tile_agent_storage;
-    status = ScanTileState::AllocationSize(static_cast<int>(num_tiles),
-                                           tile_agent_storage);
+    const auto set_op_agent_plan =
+      core::AgentPlanFromTunings<set_op_agent_t>::get();
+
+    const int tile_size  = set_op_agent_plan.items_per_tile;
+    const Size num_tiles = (keys_total + tile_size - 1) / tile_size;
+
+    std::size_t tile_agent_storage;
+    status = scan_tile_state_t::AllocationSize(static_cast<int>(num_tiles),
+                                               tile_agent_storage);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    size_t vshmem_storage = core::vshmem_size(set_op_plan.shared_memory_size,
-                                              num_tiles);
-    size_t partition_agent_storage = (num_tiles + 1) * sizeof(Size) * 2;
+    const std::size_t vshmem_storage =
+      core::vshmem_size(set_op_agent_plan.shared_memory_size, num_tiles);
+    const std::size_t partition_agent_storage = (num_tiles + 1) * sizeof(Size) * 2;
 
-    void *allocations[3] = {NULL, NULL, NULL};
-    size_t allocation_sizes[3] = {tile_agent_storage,
-                                  partition_agent_storage,
-                                  vshmem_storage};
+    void *allocations[3]            = {nullptr, nullptr, nullptr};
+    std::size_t allocation_sizes[3] = {tile_agent_storage,
+                                       partition_agent_storage,
+                                       vshmem_storage};
 
     status = core::alias_storage(d_temp_storage,
                                  temp_storage_size,
@@ -1188,49 +1161,70 @@ namespace __set_operations {
                                  allocation_sizes);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    if (d_temp_storage == NULL)
+    if (d_temp_storage == nullptr)
     {
       return status;
     }
 
-    ScanTileState tile_state;
+    scan_tile_state_t tile_state;
     status = tile_state.Init(static_cast<int>(num_tiles),
                              allocations[0],
                              allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    pair<Size, Size> *partitions = (pair<Size, Size> *)allocations[1];
-    char *vshmem_ptr = vshmem_storage > 0 ? (char *)allocations[2] : NULL;
+    using size_pair_t = pair<Size, Size>;
+    auto *partitions  = reinterpret_cast<size_pair_t *>(allocations[1]);
+    char *vshmem_ptr  = vshmem_storage > 0
+                          ? reinterpret_cast<char *>(allocations[2])
+                          : nullptr;
 
-    init_agent ia(init_plan, num_tiles, stream, "set_op::init_agent", debug_sync);
-    ia.launch(tile_state, num_tiles);
+    using init_agent_launcher_t = core::AgentLauncher<init_agent_t>;
+    init_agent_launcher_t ia{init_agent_plan,
+                             num_tiles,
+                             stream,
+                             "set_op::init_agent",
+                             debug_sync};
+    ia.launch_ptx_plan(init_ptx_plan, tile_state, num_tiles);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    partition_agent pa(partition_plan, num_tiles+1, stream, "set_op::partition agent", debug_sync);
-    pa.launch(keys1,
-              keys2,
-              num_keys1,
-              num_keys2,
-              num_tiles+1,
-              partitions,
-              compare_op,
-              tile_size);
+    using partition_agent_launcher_t = core::AgentLauncher<partition_agent_t>;
+    partition_agent_launcher_t pa{partition_agent_plan,
+                                  num_tiles + 1,
+                                  stream,
+                                  "set_op::partition agent",
+                                  debug_sync};
+    pa.launch_ptx_plan(partition_ptx_plan,
+                       keys1,
+                       keys2,
+                       num_keys1,
+                       num_keys2,
+                       num_tiles + 1,
+                       partitions,
+                       compare_op,
+                       tile_size);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    set_op_agent sa(set_op_plan, keys_total, stream, vshmem_ptr, "set_op::set_op_agent", debug_sync);
-    sa.launch(keys1,
-              keys2,
-              values1,
-              values2,
-              num_keys1,
-              num_keys2,
-              keys_output,
-              values_output,
-              compare_op,
-              set_op,
-              partitions,
-              output_count,
-              tile_state);
+    using set_op_agent_launcher_t = core::AgentLauncher<set_op_agent_t>;
+    set_op_agent_launcher_t sa{set_op_agent_plan,
+                               keys_total,
+                               stream,
+                               vshmem_ptr,
+                               "set_op::set_op_agent",
+                               debug_sync};
+    sa.launch_ptx_dispatch(typename set_op_agent_t::Tunings{},
+                           keys1,
+                           keys2,
+                           values1,
+                           values2,
+                           num_keys1,
+                           num_keys2,
+                           keys_output,
+                           values_output,
+                           compare_op,
+                           set_op,
+                           partitions,
+                           output_count,
+                           tile_state);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
     return status;
@@ -1246,7 +1240,7 @@ namespace __set_operations {
            typename ValuesOutputIt,
            typename CompareOp,
            typename SetOp>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeysOutputIt, ValuesOutputIt>
   set_operations(execution_policy<Derived>& policy,
                  KeysIt1                    keys1_first,
@@ -1362,38 +1356,42 @@ set_difference(execution_policy<Derived> &policy,
                OutputIt                   result,
                CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_difference())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_difference(cvt_to_seq(derived_cast(policy)),
-                                 items1_first,
-                                 items1_last,
-                                 items2_first,
-                                 items2_last,
-                                 result,
-                                 compare);
+  using result_t = OutputIt;
+
+  auto run_par = [&]() -> result_t {
+    using items1_t = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = nullptr;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_difference());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_difference(cvt_to_seq(derived_cast(policy)),
+                                  items1_first,
+                                  items1_last,
+                                  items2_first,
+                                  items2_last,
+                                  result,
+                                  compare);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1436,38 +1434,42 @@ set_intersection(execution_policy<Derived> &policy,
                  OutputIt                   result,
                  CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_intersection())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_intersection(cvt_to_seq(derived_cast(policy)),
-                                   items1_first,
-                                   items1_last,
-                                   items2_first,
-                                   items2_last,
-                                   result,
-                                   compare);
+  using result_t = OutputIt;
+
+  auto run_par = [&]() -> result_t {
+    using items1_t  = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = NULL;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_intersection());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_intersection(cvt_to_seq(derived_cast(policy)),
+                                    items1_first,
+                                    items1_last,
+                                    items2_first,
+                                    items2_last,
+                                    result,
+                                    compare);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1510,40 +1512,43 @@ set_symmetric_difference(execution_policy<Derived> &policy,
                          OutputIt                   result,
                          CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_symmetric_difference())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_symmetric_difference(cvt_to_seq(derived_cast(policy)),
-                                           items1_first,
-                                           items1_last,
-                                           items2_first,
-                                           items2_last,
-                                           result,
-                                           compare);
-#endif
-  }
-  return ret;
-}
+  using result_t = OutputIt;
 
+  auto run_par = [&]() -> result_t {
+    using items1_t  = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = nullptr;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_symmetric_difference());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_symmetric_difference(cvt_to_seq(derived_cast(policy)),
+                                            items1_first,
+                                            items1_last,
+                                            items2_first,
+                                            items2_last,
+                                            result,
+                                            compare);
+#endif
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
+}
 
 template <class Derived,
           class ItemsIt1,
@@ -1584,40 +1589,43 @@ set_union(execution_policy<Derived> &policy,
           OutputIt                   result,
           CompareOp                  compare)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typename thrust::iterator_value<ItemsIt1>::type *null_ = NULL;
-    //
-    ret = __set_operations::set_operations<thrust::detail::false_type>(
-              policy,
-              items1_first,
-              items1_last,
-              items2_first,
-              items2_last,
-              null_,
-              null_,
-              result,
-              null_,
-              compare,
-              __set_operations::serial_set_union())
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_union(cvt_to_seq(derived_cast(policy)),
-                            items1_first,
-                            items1_last,
-                            items2_first,
-                            items2_last,
-                            result,
-                            compare);
-#endif
-  }
-  return ret;
-}
+  using result_t = OutputIt;
 
+  auto run_par = [&]() -> result_t {
+    using items1_t  = thrust::iterator_value_t<ItemsIt1>;
+    items1_t *null_ = nullptr;
+    auto tmp = __set_operations::set_operations<thrust::detail::false_type>(
+      policy,
+      items1_first,
+      items1_last,
+      items2_first,
+      items2_last,
+      null_,
+      null_,
+      result,
+      null_,
+      compare,
+      __set_operations::serial_set_union());
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::set_union(cvt_to_seq(derived_cast(policy)),
+                             items1_first,
+                             items1_last,
+                             items2_first,
+                             items2_last,
+                             result,
+                             compare);
+#endif
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
+}
 
 template <class Derived,
           class ItemsIt1,
@@ -1671,38 +1679,42 @@ set_difference_by_key(execution_policy<Derived> &policy,
                       ItemsOutputIt              items_result,
                       CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items2_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_difference());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_difference_by_key(cvt_to_seq(derived_cast(policy)),
-                                        keys1_first,
-                                        keys1_last,
-                                        keys2_first,
-                                        keys2_last,
-                                        items1_first,
-                                        items2_first,
-                                        keys_result,
-                                        items_result,
-                                        compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items2_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_difference());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_difference_by_key(cvt_to_seq(derived_cast(policy)),
+                                         keys1_first,
+                                         keys1_last,
+                                         keys2_first,
+                                         keys2_last,
+                                         items1_first,
+                                         items2_first,
+                                         keys_result,
+                                         items_result,
+                                         compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1758,37 +1770,41 @@ set_intersection_by_key(execution_policy<Derived> &policy,
                         ItemsOutputIt              items_result,
                         CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items1_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_intersection());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_intersection_by_key(cvt_to_seq(derived_cast(policy)),
-                                          keys1_first,
-                                          keys1_last,
-                                          keys2_first,
-                                          keys2_last,
-                                          items1_first,
-                                          keys_result,
-                                          items_result,
-                                          compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items1_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_intersection());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_intersection_by_key(cvt_to_seq(derived_cast(policy)),
+                                           keys1_first,
+                                           keys1_last,
+                                           keys2_first,
+                                           keys2_last,
+                                           items1_first,
+                                           keys_result,
+                                           items_result,
+                                           compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1843,38 +1859,43 @@ set_symmetric_difference_by_key(execution_policy<Derived> &policy,
                                 ItemsOutputIt              items_result,
                                 CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items2_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_symmetric_difference());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_symmetric_difference_by_key(cvt_to_seq(derived_cast(policy)),
-                                                  keys1_first,
-                                                  keys1_last,
-                                                  keys2_first,
-                                                  keys2_last,
-                                                  items1_first,
-                                                  items2_first,
-                                                  keys_result,
-                                                  items_result,
-                                                  compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items2_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_symmetric_difference());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_symmetric_difference_by_key(cvt_to_seq(
+                                                     derived_cast(policy)),
+                                                   keys1_first,
+                                                   keys1_last,
+                                                   keys2_first,
+                                                   keys2_last,
+                                                   items1_first,
+                                                   items2_first,
+                                                   keys_result,
+                                                   items_result,
+                                                   compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,
@@ -1931,38 +1952,42 @@ set_union_by_key(execution_policy<Derived> &policy,
                  ItemsOutputIt              items_result,
                  CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __set_operations::set_operations<thrust::detail::true_type>(
-        policy,
-        keys1_first,
-        keys1_last,
-        keys2_first,
-        keys2_last,
-        items1_first,
-        items2_first,
-        keys_result,
-        items_result,
-        compare_op,
-        __set_operations::serial_set_union());
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::set_union_by_key(cvt_to_seq(derived_cast(policy)),
-                                   keys1_first,
-                                   keys1_last,
-                                   keys2_first,
-                                   keys2_last,
-                                   items1_first,
-                                   items2_first,
-                                   keys_result,
-                                   items_result,
-                                   compare_op);
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
+    return __set_operations::set_operations<thrust::detail::true_type>(
+      policy,
+      keys1_first,
+      keys1_last,
+      keys2_first,
+      keys2_last,
+      items1_first,
+      items2_first,
+      keys_result,
+      items_result,
+      compare_op,
+      __set_operations::serial_set_union());
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::set_union_by_key(cvt_to_seq(derived_cast(policy)),
+                                    keys1_first,
+                                    keys1_last,
+                                    keys2_first,
+                                    keys2_last,
+                                    items1_first,
+                                    items2_first,
+                                    keys_result,
+                                    items_result,
+                                    compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

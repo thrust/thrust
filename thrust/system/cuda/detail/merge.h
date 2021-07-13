@@ -42,6 +42,8 @@ j * Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
 #include <thrust/detail/mpl/math.h>
 #include <thrust/distance.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 
 namespace thrust
 {
@@ -133,16 +135,13 @@ namespace __merge {
             cub::BlockStoreAlgorithm _STORE_ALGORITHM  = cub::BLOCK_STORE_DIRECT>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS      = _BLOCK_THREADS,
-      ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD,
-    };
+    static constexpr int BLOCK_THREADS      = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD   = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE     = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    static const cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
+    static constexpr cub::BlockLoadAlgorithm  LOAD_ALGORITHM  = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier   LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static constexpr cub::BlockStoreAlgorithm STORE_ALGORITHM = _STORE_ALGORITHM;
   };    // PtxPolicy
 
   template <class KeysIt1,
@@ -151,11 +150,9 @@ namespace __merge {
             class CompareOp>
   struct PartitionAgent
   {
-    template <class Arch>
     struct PtxPlan : PtxPolicy<256> {};
 
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
-
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(KeysIt1   keys1,
                        KeysIt2   keys2,
                        Size      keys1_count,
@@ -182,109 +179,70 @@ namespace __merge {
     }
   };    // struct PartitionAgent
 
-
-  template <class Arch, class TSize>
-  struct Tuning;
-
   namespace mpl = thrust::detail::mpl::math;
 
-  template<size_t NOMINAL_4B_ITEMS_PER_THREAD, size_t INPUT_SIZE>
+  template<int NOMINAL_4B_ITEMS_PER_THREAD, int INPUT_SIZE>
   struct items_per_thread
   {
-    enum
-    {
-      ITEMS_PER_THREAD =
-          mpl::min<
-              int,
-              NOMINAL_4B_ITEMS_PER_THREAD,
-              mpl::max<
-                  int,
-                  1,
-                  (NOMINAL_4B_ITEMS_PER_THREAD * 4 / INPUT_SIZE)>::value>::value,
-      value = mpl::is_odd<size_t, ITEMS_PER_THREAD>::value
-                  ? ITEMS_PER_THREAD
-                  : ITEMS_PER_THREAD + 1
-    };
+    // clang-format off
+    static constexpr int ITEMS_PER_THREAD =
+      mpl::min<int,
+               NOMINAL_4B_ITEMS_PER_THREAD,
+               mpl::max<int,
+                        1,
+                        (NOMINAL_4B_ITEMS_PER_THREAD * 4 / INPUT_SIZE)>::value
+        >::value;
+    // clang-format on
+
+    static constexpr int value = mpl::is_odd<int, ITEMS_PER_THREAD>::value
+                                   ? ITEMS_PER_THREAD
+                                   : ITEMS_PER_THREAD + 1;
   };
 
-  template<class TSize>
-  struct Tuning<sm30,TSize>
+  template <class TSize>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    const static int INPUT_SIZE = TSize::value;
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD,
-                                          INPUT_SIZE>::value
-    };
+    static constexpr int INPUT_SIZE                  = TSize::value;
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 11;
+    static constexpr int ITEMS_PER_THREAD =
+      items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD, INPUT_SIZE>::value;
 
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };    // Tuning sm300
+    using Policy = PtxPolicy<256,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
+  }; // Tuning350
 
-
-
-  template<class TSize>
-  struct Tuning<sm60,TSize> : Tuning<sm30,TSize>
+  template <class TSize>
+  struct Tuning520 : cub::detail::ptx_base<520>
   {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 15,
-      ITEMS_PER_THREAD            = items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD,
-                                          Tuning::INPUT_SIZE>::value
-    };
+    static constexpr int INPUT_SIZE                  = TSize::value;
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 13;
+    static constexpr int ITEMS_PER_THREAD =
+      items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD, INPUT_SIZE>::value;
 
+    using Policy = PtxPolicy<512,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
+  }; // Tuning520
 
-    typedef PtxPolicy<512,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };    // Tuning sm52
-
-  template<class TSize>
-  struct Tuning<sm52,TSize> : Tuning<sm30,TSize>
+  template <class TSize>
+  struct Tuning600 : cub::detail::ptx_base<600>
   {
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 13,
-      ITEMS_PER_THREAD            = items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD,
-                                          Tuning::INPUT_SIZE>::value
-    };
+    static constexpr int INPUT_SIZE                  = TSize::value;
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 15;
+    static constexpr int ITEMS_PER_THREAD =
+      items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD, INPUT_SIZE>::value;
 
-    typedef PtxPolicy<512,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };    // Tuning sm52
-
-  template<class TSize>
-  struct Tuning<sm35,TSize> : Tuning<sm30,TSize>
-  {
-    const static int INPUT_SIZE = TSize::value;
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 11,
-      ITEMS_PER_THREAD            = items_per_thread<NOMINAL_4B_ITEMS_PER_THREAD,
-                                          Tuning::INPUT_SIZE>::value
-    };
-
-
-    typedef PtxPolicy<256,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_STORE_WARP_TRANSPOSE>
-        type;
-  };    // Tuning sm350
-
+    using Policy = PtxPolicy<512,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_DEFAULT,
+                             cub::BLOCK_STORE_WARP_TRANSPOSE>;
+  }; // Tuning600
 
   template<size_t VALUE>
   struct integer_constant : thrust::detail::integral_constant<size_t, VALUE> {};
@@ -300,41 +258,45 @@ namespace __merge {
             class MERGE_ITEMS>
   struct MergeAgent
   {
-    typedef typename iterator_traits<KeysIt1>::value_type  key1_type;
-    typedef typename iterator_traits<KeysIt2>::value_type  key2_type;
-    typedef typename iterator_traits<ItemsIt1>::value_type item1_type;
-    typedef typename iterator_traits<ItemsIt2>::value_type item2_type;
+    using key1_type  = typename iterator_traits<KeysIt1>::value_type;
+    using key2_type  = typename iterator_traits<KeysIt2>::value_type;
+    using item1_type = typename iterator_traits<ItemsIt1>::value_type;
+    using item2_type = typename iterator_traits<ItemsIt2>::value_type;
 
-    typedef key1_type  key_type;
-    typedef item1_type item_type;
+    using key_type  = key1_type;
+    using item_type = item1_type;
 
-    typedef typename thrust::detail::conditional<
-        MERGE_ITEMS::value,
-        integer_constant<sizeof(key_type) + sizeof(item_type)>,
-        integer_constant<sizeof(key_type)> >::type tuning_type;
+    using tuning_type = typename thrust::detail::conditional<
+      MERGE_ITEMS::value,
+      integer_constant<sizeof(key_type) + sizeof(item_type)>,
+      integer_constant<sizeof(key_type)>>::type;
 
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning600<tuning_type>,
+                                           Tuning520<tuning_type>,
+                                           Tuning350<tuning_type>>;
 
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, tuning_type>::type
+    template <class Tuning>
+    struct PtxPlan : Tuning::Policy
     {
-      typedef Tuning<Arch,tuning_type> tuning;
+      using KeysLoadIt1  = typename core::LoadIterator<PtxPlan, KeysIt1>::type;
+      using KeysLoadIt2  = typename core::LoadIterator<PtxPlan, KeysIt2>::type;
+      using ItemsLoadIt1 = typename core::LoadIterator<PtxPlan, ItemsIt1>::type;
+      using ItemsLoadIt2 = typename core::LoadIterator<PtxPlan, ItemsIt2>::type;
 
-      typedef typename core::LoadIterator<PtxPlan, KeysIt1>::type  KeysLoadIt1;
-      typedef typename core::LoadIterator<PtxPlan, KeysIt2>::type  KeysLoadIt2;
-      typedef typename core::LoadIterator<PtxPlan, ItemsIt1>::type ItemsLoadIt1;
-      typedef typename core::LoadIterator<PtxPlan, ItemsIt2>::type ItemsLoadIt2;
+      using BlockLoadKeys1 =
+        typename core::BlockLoad<PtxPlan, KeysLoadIt1>::type;
+      using BlockLoadKeys2 =
+        typename core::BlockLoad<PtxPlan, KeysLoadIt2>::type;
+      using BlockLoadItems1 =
+        typename core::BlockLoad<PtxPlan, ItemsLoadIt1>::type;
+      using BlockLoadItems2 =
+        typename core::BlockLoad<PtxPlan, ItemsLoadIt2>::type;
 
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadIt1>::type  BlockLoadKeys1;
-      typedef typename core::BlockLoad<PtxPlan, KeysLoadIt2>::type  BlockLoadKeys2;
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadIt1>::type BlockLoadItems1;
-      typedef typename core::BlockLoad<PtxPlan, ItemsLoadIt2>::type BlockLoadItems2;
-
-      typedef typename core::BlockStore<PtxPlan,
-                                        KeysOutputIt,
-                                        key_type>::type BlockStoreKeys;
-      typedef typename core::BlockStore<PtxPlan,
-                                        ItemsOutputIt,
-                                        item_type>::type BlockStoreItems;
+      using BlockStoreKeys =
+        typename core::BlockStore<PtxPlan, KeysOutputIt, key_type>::type;
+      using BlockStoreItems =
+        typename core::BlockStore<PtxPlan, ItemsOutputIt, item_type>::type;
 
       // gather required temporary storage in a union
       //
@@ -352,29 +314,25 @@ namespace __merge {
       };    // union TempStorage
     };    // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::KeysLoadIt1     KeysLoadIt1;
-    typedef typename ptx_plan::KeysLoadIt2     KeysLoadIt2;
-    typedef typename ptx_plan::ItemsLoadIt1    ItemsLoadIt1;
-    typedef typename ptx_plan::ItemsLoadIt2    ItemsLoadIt2;
-    typedef typename ptx_plan::BlockLoadKeys1  BlockLoadKeys1;
-    typedef typename ptx_plan::BlockLoadKeys2  BlockLoadKeys2;
-    typedef typename ptx_plan::BlockLoadItems1 BlockLoadItems1;
-    typedef typename ptx_plan::BlockLoadItems2 BlockLoadItems2;
-    typedef typename ptx_plan::BlockStoreKeys  BlockStoreKeys;
-    typedef typename ptx_plan::BlockStoreItems BlockStoreItems;
-    typedef typename ptx_plan::TempStorage     TempStorage;
-
-    enum
-    {
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using KeysLoadIt1     = typename ActivePtxPlan::KeysLoadIt1;
+      using KeysLoadIt2     = typename ActivePtxPlan::KeysLoadIt2;
+      using ItemsLoadIt1    = typename ActivePtxPlan::ItemsLoadIt1;
+      using ItemsLoadIt2    = typename ActivePtxPlan::ItemsLoadIt2;
+      using BlockLoadKeys1  = typename ActivePtxPlan::BlockLoadKeys1;
+      using BlockLoadKeys2  = typename ActivePtxPlan::BlockLoadKeys2;
+      using BlockLoadItems1 = typename ActivePtxPlan::BlockLoadItems1;
+      using BlockLoadItems2 = typename ActivePtxPlan::BlockLoadItems2;
+      using BlockStoreKeys  = typename ActivePtxPlan::BlockStoreKeys;
+      using BlockStoreItems = typename ActivePtxPlan::BlockStoreItems;
+      using TempStorage     = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
       //---------------------------------------------------------------------
       // Per thread data
       //---------------------------------------------------------------------
@@ -630,7 +588,7 @@ namespace __merge {
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
-
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(KeysIt1       keys1_in,
                        KeysIt2       keys2_in,
                        ItemsIt1      items1_in,
@@ -643,19 +601,20 @@ namespace __merge {
                        Size*         merge_partitions,
                        char*         shmem)
     {
-      TempStorage& storage = *reinterpret_cast<TempStorage*>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage        = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(storage,
-           core::make_load_iterator(ptx_plan(), keys1_in),
-           core::make_load_iterator(ptx_plan(), keys2_in),
-           core::make_load_iterator(ptx_plan(), items1_in),
-           core::make_load_iterator(ptx_plan(), items2_in),
-           keys1_count,
-           keys2_count,
-           keys_out,
-           items_out,
-           compare_op,
-           merge_partitions);
+      impl<ActivePtxPlan>{storage,
+                          core::make_load_iterator(ActivePtxPlan{}, keys1_in),
+                          core::make_load_iterator(ActivePtxPlan{}, keys2_in),
+                          core::make_load_iterator(ActivePtxPlan{}, items1_in),
+                          core::make_load_iterator(ActivePtxPlan{}, items2_in),
+                          keys1_count,
+                          keys2_count,
+                          keys_out,
+                          items_out,
+                          compare_op,
+                          merge_partitions};
     }
   };    // struct MergeAgent;
 
@@ -672,7 +631,7 @@ namespace __merge {
             class KeysOutputIt,
             class ItemsOutputIt,
             class CompareOp>
-  cudaError_t THRUST_RUNTIME_FUNCTION
+  cudaError_t CUB_RUNTIME_FUNCTION
   doit_step(void*         d_temp_storage,
             size_t&       temp_storage_bytes,
             KeysIt1       keys1,
@@ -687,43 +646,48 @@ namespace __merge {
             cudaStream_t  stream,
             bool          debug_sync)
   {
-    if (num_keys1 + num_keys2 == 0)
-      return cudaErrorNotSupported;
-
-    using core::AgentPlan;
-    using core::get_agent_plan;
-    typedef core::AgentLauncher<
-        MergeAgent<KeysIt1,
-                   KeysIt2,
-                   ItemsIt1,
-                   ItemsIt2,
-                   Size,
-                   KeysOutputIt,
-                   ItemsOutputIt,
-                   CompareOp,
-                   MERGE_ITEMS> >
-        merge_agent;
-
-    typedef core::AgentLauncher<
-        PartitionAgent<KeysIt1,
-                       KeysIt2,
-                       Size,
-                       CompareOp> >
-        partition_agent;
-
     cudaError_t status = cudaSuccess;
 
-    AgentPlan partition_plan = partition_agent::get_plan();
-    AgentPlan merge_plan     = merge_agent::get_plan(stream);
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
 
-    int  tile_size = merge_plan.items_per_tile;
-    Size num_tiles = (num_keys1 + num_keys2 + tile_size - 1) / tile_size;
+    if (num_keys1 + num_keys2 == 0)
+    {
+      return status;
+    }
 
-    size_t temp_storage1 = (1 + num_tiles) * sizeof(Size);
-    size_t temp_storage2 = core::vshmem_size(merge_plan.shared_memory_size,
-                                             num_tiles);
+    // Declare type aliases for agents, etc:
+    using merge_agent_t = MergeAgent<KeysIt1,
+                                     KeysIt2,
+                                     ItemsIt1,
+                                     ItemsIt2,
+                                     Size,
+                                     KeysOutputIt,
+                                     ItemsOutputIt,
+                                     CompareOp,
+                                     MERGE_ITEMS>;
+    using merge_agent_launcher_t = core::AgentLauncher<merge_agent_t>;
 
-    void*  allocations[2]      = {NULL, NULL};
+    using partition_agent_t = PartitionAgent<KeysIt1, KeysIt2, Size, CompareOp>;
+    using partition_agent_launcher_t = core::AgentLauncher<partition_agent_t>;
+
+    // Create PtxPlans and AgentPlans:
+    const auto partition_ptx_plan = typename partition_agent_t::PtxPlan{};
+    const auto partition_agent_plan = core::AgentPlan{partition_ptx_plan};
+
+    const auto merge_agent_plan =
+      core::AgentPlanFromTunings<merge_agent_t>::get();
+
+    const int tile_size  = merge_agent_plan.items_per_tile;
+    const Size num_tiles = (num_keys1 + num_keys2 + tile_size - 1) / tile_size;
+
+    const size_t temp_storage1 = (1 + num_tiles) * sizeof(Size);
+    const size_t temp_storage2 =
+      core::vshmem_size(merge_agent_plan.shared_memory_size, num_tiles);
+
+    void *allocations[2]       = {nullptr, nullptr};
     size_t allocation_sizes[2] = {temp_storage1, temp_storage2};
 
     status = core::alias_storage(d_temp_storage,
@@ -738,35 +702,48 @@ namespace __merge {
     }
 
     // partition data into work balanced tiles
-    Size* merge_partitions = (Size*)allocations[0];
-    char* vshmem_ptr       = temp_storage2 > 0 ? (char*)allocations[1] : NULL;
+    Size *merge_partitions = reinterpret_cast<Size *>(allocations[0]);
+    char *vshmem_ptr       = temp_storage2 > 0
+                               ? reinterpret_cast<char *>(allocations[1])
+                               : nullptr;
 
     {
-      Size num_partitions = num_tiles + 1;
+      const Size num_partitions = num_tiles + 1;
 
-      partition_agent(partition_plan, num_partitions, stream, "partition agent", debug_sync)
-          .launch(keys1,
-                  keys2,
-                  num_keys1,
-                  num_keys2,
-                  num_partitions,
-                  merge_partitions,
-                  compare_op,
-                  merge_plan.items_per_tile);
+      partition_agent_launcher_t pa{partition_agent_plan,
+                                    num_partitions,
+                                    stream,
+                                    "partition agent",
+                                    debug_sync};
+      pa.launch_ptx_plan(partition_ptx_plan,
+                         keys1,
+                         keys2,
+                         num_keys1,
+                         num_keys2,
+                         num_partitions,
+                         merge_partitions,
+                         compare_op,
+                         merge_agent_plan.items_per_tile);
       CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
     }
 
-    merge_agent(merge_plan, num_keys1 + num_keys2, stream, vshmem_ptr, "merge agent", debug_sync)
-        .launch(keys1,
-                keys2,
-                items1,
-                items2,
-                num_keys1,
-                num_keys2,
-                keys_result,
-                items_result,
-                compare_op,
-                merge_partitions);
+    merge_agent_launcher_t ma{merge_agent_plan,
+                              num_keys1 + num_keys2,
+                              stream,
+                              vshmem_ptr,
+                              "merge agent",
+                              debug_sync};
+    ma.launch_ptx_dispatch(typename merge_agent_t::Tunings{},
+                           keys1,
+                           keys2,
+                           items1,
+                           items2,
+                           num_keys1,
+                           num_keys2,
+                           keys_result,
+                           items_result,
+                           compare_op,
+                           merge_partitions);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
     return status;
@@ -781,7 +758,7 @@ namespace __merge {
             typename KeysOutputIt,
             typename ItemsOutputIt,
             typename CompareOp>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   pair<KeysOutputIt, ItemsOutputIt>
   merge(execution_policy<Derived>& policy,
         KeysIt1                    keys1_first,
@@ -875,38 +852,40 @@ merge(execution_policy<Derived>& policy,
       CompareOp                  compare_op)
 
 {
-  ResultIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    typedef typename thrust::iterator_value<KeysIt1>::type keys_type;
-    //
-    keys_type* null_ = NULL;
-    //
-    ret = __merge::merge<thrust::detail::false_type>(policy,
-                                                     keys1_first,
-                                                     keys1_last,
-                                                     keys2_first,
-                                                     keys2_last,
-                                                     null_,
-                                                     null_,
-                                                     result,
-                                                     null_,
-                                                     compare_op)
-              .first;
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::merge(cvt_to_seq(derived_cast(policy)),
-                        keys1_first,
-                        keys1_last,
-                        keys2_first,
-                        keys2_last,
-                        result,
-                        compare_op);
+  using result_t = ResultIt;
+
+  auto run_par = [&]() -> result_t {
+    using keys_type  = thrust::iterator_value_t<KeysIt1>;
+    keys_type *null_ = nullptr;
+    auto tmp = __merge::merge<thrust::detail::false_type>(policy,
+                                                          keys1_first,
+                                                          keys1_last,
+                                                          keys2_first,
+                                                          keys2_last,
+                                                          null_,
+                                                          null_,
+                                                          result,
+                                                          null_,
+                                                          compare_op);
+    return tmp.first;
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::merge(cvt_to_seq(derived_cast(policy)),
+                         keys1_first,
+                         keys1_last,
+                         keys2_first,
+                         keys2_last,
+                         result,
+                         compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived, class KeysIt1, class KeysIt2, class ResultIt>
@@ -949,9 +928,9 @@ merge_by_key(execution_policy<Derived> &policy,
              ItemsOutputIt              items_result,
              CompareOp                  compare_op)
 {
-  pair<KeysOutputIt, ItemsOutputIt> ret = thrust::make_pair(keys_result, items_result);
-  if (__THRUST_HAS_CUDART__)
-  {
+  using result_t = pair<KeysOutputIt, ItemsOutputIt>;
+
+  auto run_par = [&]() -> result_t {
     return __merge::merge<thrust::detail::true_type>(policy,
                                                      keys1_first,
                                                      keys1_last,
@@ -962,23 +941,27 @@ merge_by_key(execution_policy<Derived> &policy,
                                                      keys_result,
                                                      items_result,
                                                      compare_op);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::merge_by_key(cvt_to_seq(derived_cast(policy)),
-                               keys1_first,
-                               keys1_last,
-                               keys2_first,
-                               keys2_last,
-                               items1_first,
-                               items2_first,
-                               keys_result,
-                               items_result,
-                               compare_op);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return thrust::make_pair(keys_result, items_result);
+#else
+    return thrust::merge_by_key(cvt_to_seq(derived_cast(policy)),
+                                keys1_first,
+                                keys1_last,
+                                keys2_first,
+                                keys2_last,
+                                items1_first,
+                                items2_first,
+                                keys_result,
+                                items_result,
+                                compare_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <class Derived,

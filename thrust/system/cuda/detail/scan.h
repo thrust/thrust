@@ -36,6 +36,7 @@
 #include <thrust/system/cuda/config.h>
 #include <thrust/system/cuda/detail/dispatch.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
 #include <cub/device/device_scan.cuh>
 
 namespace thrust
@@ -218,26 +219,30 @@ OutputIt inclusive_scan_n(thrust::cuda_cub::execution_policy<Derived> &policy,
                           OutputIt result,
                           ScanOp scan_op)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = thrust::cuda_cub::detail::inclusive_scan_n_impl(policy,
-                                                          first,
-                                                          num_items,
-                                                          result,
-                                                          scan_op);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::inclusive_scan(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 first + num_items,
-                                 result,
-                                 scan_op);
+  using result_t = OutputIt;
+
+  auto run_par = [&]() -> result_t {
+    return thrust::cuda_cub::detail::inclusive_scan_n_impl(policy,
+                                                           first,
+                                                           num_items,
+                                                           result,
+                                                           scan_op);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::inclusive_scan(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  first + num_items,
+                                  result,
+                                  scan_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <typename Derived, typename InputIt, typename OutputIt, typename ScanOp>
@@ -286,28 +291,32 @@ OutputIt exclusive_scan_n(thrust::cuda_cub::execution_policy<Derived> &policy,
                           T init,
                           ScanOp scan_op)
 {
-  OutputIt ret = result;
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = thrust::cuda_cub::detail::exclusive_scan_n_impl(policy,
-                                                          first,
-                                                          num_items,
-                                                          result,
-                                                          init,
-                                                          scan_op);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::exclusive_scan(cvt_to_seq(derived_cast(policy)),
-                                 first,
-                                 first + num_items,
-                                 result,
-                                 init,
-                                 scan_op);
+  using result_t = OutputIt;
+
+  auto run_par = [&]() -> result_t {
+    return thrust::cuda_cub::detail::exclusive_scan_n_impl(policy,
+                                                           first,
+                                                           num_items,
+                                                           result,
+                                                           init,
+                                                           scan_op);
+  };
+
+  auto run_seq = [&]() -> result_t {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::exclusive_scan(cvt_to_seq(derived_cast(policy)),
+                                  first,
+                                  first + num_items,
+                                  result,
+                                  init,
+                                  scan_op);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }
 
 template <typename Derived,

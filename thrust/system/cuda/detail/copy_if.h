@@ -41,6 +41,8 @@
 #include <thrust/distance.h>
 #include <thrust/detail/alignment.h>
 
+#include <cub/detail/cdp_dispatch.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/util_math.cuh>
 
 namespace thrust
@@ -77,80 +79,51 @@ namespace __copy_if {
             cub::BlockScanAlgorithm _SCAN_ALGORITHM   = cub::BLOCK_SCAN_WARP_SCANS>
   struct PtxPolicy
   {
-    enum
-    {
-      BLOCK_THREADS      = _BLOCK_THREADS,
-      ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
-      ITEMS_PER_TILE     = _BLOCK_THREADS * _ITEMS_PER_THREAD,
-    };
-    static const cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
-    static const cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
-    static const cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
+    static constexpr int BLOCK_THREADS      = _BLOCK_THREADS;
+    static constexpr int ITEMS_PER_THREAD   = _ITEMS_PER_THREAD;
+    static constexpr int ITEMS_PER_TILE     = BLOCK_THREADS * ITEMS_PER_THREAD;
+    static constexpr cub::BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+    static constexpr cub::CacheLoadModifier  LOAD_MODIFIER  = _LOAD_MODIFIER;
+    static constexpr cub::BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
   };    // struct PtxPolicy
 
-  template<class, class>
-  struct Tuning;
+  template <class T>
+  struct Tuning520 : cub::detail::ptx_base<520>
+  {
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 9;
+
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
+    static constexpr int ITEMS_PER_THREAD =
+      CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+              CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T))));
+
+    using Policy = PtxPolicy<128,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning520
 
   template<class T>
-  struct Tuning<sm52, T>
+  struct Tuning350 : cub::detail::ptx_base<350>
   {
-    const static int INPUT_SIZE = sizeof(T);
+    static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 10;
 
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 9,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
+    static constexpr int INPUT_SIZE = static_cast<int>(sizeof(T));
+    static constexpr int ITEMS_PER_THREAD =
+      CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD,
+              CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T))));
 
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning<350>
-
-
-  template<class T>
-  struct Tuning<sm35, T>
-  {
-    const static int INPUT_SIZE = sizeof(T);
-
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 10,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_LDG,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning<350>
-
-  template<class T>
-  struct Tuning<sm30, T>
-  {
-    const static int INPUT_SIZE = sizeof(T);
-
-    enum
-    {
-      NOMINAL_4B_ITEMS_PER_THREAD = 7,
-      ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(3, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-    };
-
-    typedef PtxPolicy<128,
-                      ITEMS_PER_THREAD,
-                      cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                      cub::LOAD_DEFAULT,
-                      cub::BLOCK_SCAN_WARP_SCANS>
-        type;
-  };    // Tuning<300>
+    using Policy = PtxPolicy<128,
+                             ITEMS_PER_THREAD,
+                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                             cub::LOAD_LDG,
+                             cub::BLOCK_SCAN_WARP_SCANS>;
+  }; // Tuning350
 
   struct no_stencil_tag_    {};
   typedef no_stencil_tag_* no_stencil_tag;
+
   template <class ItemsIt,
             class StencilIt,
             class OutputIt,
@@ -164,11 +137,13 @@ namespace __copy_if {
 
     typedef cub::ScanTileState<Size> ScanTileState;
 
-    template <class Arch>
-    struct PtxPlan : Tuning<Arch, item_type>::type
-    {
-      typedef Tuning<Arch,item_type> tuning;
+    // List tunings in reverse order:
+    using Tunings = cub::detail::type_list<Tuning520<item_type>,
+                                           Tuning350<item_type>>;
 
+    template <typename Tuning>
+    struct PtxPlan : Tuning::Policy
+    {
       typedef typename core::LoadIterator<PtxPlan, ItemsIt>::type   ItemsLoadIt;
       typedef typename core::LoadIterator<PtxPlan, StencilIt>::type StencilLoadIt;
 
@@ -178,7 +153,7 @@ namespace __copy_if {
       typedef cub::TilePrefixCallbackOp<Size,
                                         cub::Sum,
                                         ScanTileState,
-                                        Arch::ver>
+                                        Tuning::ptx_arch>
           TilePrefixCallback;
 
       typedef cub::BlockScan<Size,
@@ -186,7 +161,7 @@ namespace __copy_if {
                              PtxPlan::SCAN_ALGORITHM,
                              1,
                              1,
-                             Arch::ver>
+                             Tuning::ptx_arch>
           BlockScan;
 
 
@@ -205,26 +180,24 @@ namespace __copy_if {
       };    // union TempStorage
     };    // struct PtxPlan
 
-    typedef typename core::specialize_plan_msvc10_war<PtxPlan>::type::type ptx_plan;
-
-    typedef typename ptx_plan::ItemsLoadIt        ItemsLoadIt;
-    typedef typename ptx_plan::StencilLoadIt      StencilLoadIt;
-    typedef typename ptx_plan::BlockLoadItems     BlockLoadItems;
-    typedef typename ptx_plan::BlockLoadStencil   BlockLoadStencil;
-    typedef typename ptx_plan::TilePrefixCallback TilePrefixCallback;
-    typedef typename ptx_plan::BlockScan          BlockScan;
-    typedef typename ptx_plan::TempStorage        TempStorage;
-
-    enum
-    {
-      USE_STENCIL      = !thrust::detail::is_same<StencilIt, no_stencil_tag>::value,
-      BLOCK_THREADS    = ptx_plan::BLOCK_THREADS,
-      ITEMS_PER_THREAD = ptx_plan::ITEMS_PER_THREAD,
-      ITEMS_PER_TILE   = ptx_plan::ITEMS_PER_TILE
-    };
-
+    template <typename ActivePtxPlan>
     struct impl
     {
+      using ItemsLoadIt        = typename ActivePtxPlan::ItemsLoadIt;
+      using StencilLoadIt      = typename ActivePtxPlan::StencilLoadIt;
+      using BlockLoadItems     = typename ActivePtxPlan::BlockLoadItems;
+      using BlockLoadStencil   = typename ActivePtxPlan::BlockLoadStencil;
+      using TilePrefixCallback = typename ActivePtxPlan::TilePrefixCallback;
+      using BlockScan          = typename ActivePtxPlan::BlockScan;
+      using TempStorage        = typename ActivePtxPlan::TempStorage;
+
+      static constexpr int BLOCK_THREADS    = ActivePtxPlan::BLOCK_THREADS;
+      static constexpr int ITEMS_PER_THREAD = ActivePtxPlan::ITEMS_PER_THREAD;
+      static constexpr int ITEMS_PER_TILE   = ActivePtxPlan::ITEMS_PER_TILE;
+
+      static constexpr bool USE_STENCIL =
+        !thrust::detail::is_same<StencilIt, no_stencil_tag>::value;
+
       //---------------------------------------------------------------------
       // Per-thread fields
       //---------------------------------------------------------------------
@@ -511,8 +484,8 @@ namespace __copy_if {
                                   NumSelectedOutputIt num_selected_out)
           : storage(storage_),
             tile_state(tile_state_),
-            items_load_it(core::make_load_iterator(ptx_plan(), items_it)),
-            stencil_load_it(core::make_load_iterator(ptx_plan(), stencil_it)),
+            items_load_it(core::make_load_iterator(ActivePtxPlan{}, items_it)),
+            stencil_load_it(core::make_load_iterator(ActivePtxPlan{}, stencil_it)),
             output_it(output_it_),
             predicate(predicate_),
             num_items(num_items_)
@@ -544,6 +517,7 @@ namespace __copy_if {
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename ActivePtxPlan>
     THRUST_AGENT_ENTRY(ItemsIt             items_it,
                        StencilIt           stencil_it,
                        OutputIt            output_it,
@@ -554,17 +528,18 @@ namespace __copy_if {
                        int                 num_tiles,
                        char *              shmem)
     {
-      TempStorage &storage = *reinterpret_cast<TempStorage *>(shmem);
+      using temp_storage_t = typename ActivePtxPlan::TempStorage;
+      auto &storage = *reinterpret_cast<temp_storage_t *>(shmem);
 
-      impl(storage,
-           tile_state,
-           items_it,
-           stencil_it,
-           output_it,
-           predicate,
-           num_items,
-           num_tiles,
-           num_selected_out);
+      impl<ActivePtxPlan>(storage,
+                          tile_state,
+                          items_it,
+                          stencil_it,
+                          output_it,
+                          predicate,
+                          num_items,
+                          num_tiles,
+                          num_selected_out);
     }
   };    // struct CopyIfAgent
 
@@ -573,14 +548,13 @@ namespace __copy_if {
             class Size>
   struct InitAgent
   {
-    template <class Arch>
-    struct PtxPlan : PtxPolicy<128> {};
-    typedef core::specialize_plan<PtxPlan> ptx_plan;
+    using PtxPlan = PtxPolicy<128>;
 
     //---------------------------------------------------------------------
     // Agent entry point
     //---------------------------------------------------------------------
 
+    template <typename /*ActivePtxPlan*/>
     THRUST_AGENT_ENTRY(ScanTileState tile_state,
                        Size          num_tiles,
                        NumSelectedIt num_selected_out,
@@ -598,95 +572,107 @@ namespace __copy_if {
             class Predicate,
             class Size,
             class NumSelectedOutIt>
-  static cudaError_t THRUST_RUNTIME_FUNCTION
-  doit_step(void *           d_temp_storage,
-            size_t &         temp_storage_bytes,
-            ItemsIt          items,
-            StencilIt        stencil,
-            OutputIt         output_it,
-            Predicate        predicate,
-            NumSelectedOutIt num_selected_out,
-            Size             num_items,
-            cudaStream_t     stream,
-            bool             debug_sync)
+  CUB_RUNTIME_FUNCTION
+  static cudaError_t doit_step(void *           d_temp_storage,
+                               size_t &         temp_storage_bytes,
+                               ItemsIt          items,
+                               StencilIt        stencil,
+                               OutputIt         output_it,
+                               Predicate        predicate,
+                               NumSelectedOutIt num_selected_out,
+                               Size             num_items,
+                               cudaStream_t     stream,
+                               bool             debug_sync)
   {
-    if (num_items == 0)
-      return cudaSuccess;
-
-    using core::AgentLauncher;
-    using core::AgentPlan;
-    using core::get_agent_plan;
-
-    typedef AgentLauncher<
-        CopyIfAgent<ItemsIt,
-                    StencilIt,
-                    OutputIt,
-                    Predicate,
-                    Size,
-                    NumSelectedOutIt> >
-        copy_if_agent;
-
-    typedef typename copy_if_agent::ScanTileState ScanTileState;
-
-    typedef AgentLauncher<
-        InitAgent<ScanTileState, NumSelectedOutIt, Size> >
-        init_agent;
-
-
-    using core::get_plan;
-    typename get_plan<init_agent>::type    init_plan    = init_agent::get_plan();
-    typename get_plan<copy_if_agent>::type copy_if_plan = copy_if_agent::get_plan(stream);
-
-    int tile_size = copy_if_plan.items_per_tile;
-    size_t num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
-
-    size_t vshmem_size = core::vshmem_size(copy_if_plan.shared_memory_size,
-                                           num_tiles);
-
     cudaError_t status = cudaSuccess;
-    if (num_items == 0)
-      return status;
 
-    size_t allocation_sizes[2] = {0, vshmem_size};
-    status = ScanTileState::AllocationSize(static_cast<int>(num_tiles), allocation_sizes[0]);
+    if (!d_temp_storage)
+    { // Initialize this for early return.
+      temp_storage_bytes = 0;
+    }
+
+    if (num_items == 0)
+    {
+      return status;
+    }
+
+    // Declare type aliases for agents, etc:
+    using copy_if_agent_t =
+      CopyIfAgent<ItemsIt, StencilIt, OutputIt, Predicate, Size, NumSelectedOutIt>;
+    using scan_tile_state_t = typename copy_if_agent_t::ScanTileState;
+    using init_agent_t = InitAgent<scan_tile_state_t, NumSelectedOutIt, Size>;
+
+    // Create PtxPlans and AgentPlans:
+    const auto init_ptx_plan = typename init_agent_t::PtxPlan{};
+    const auto init_agent_plan = core::AgentPlan{init_ptx_plan};
+
+    const auto copy_if_agent_plan =
+      core::AgentPlanFromTunings<copy_if_agent_t>::get();
+
+    // Figure out temp_storage_size:
+    const int tile_size = copy_if_agent_plan.items_per_tile;
+    const int num_tiles =
+      static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
+
+    const std::size_t vshmem_size =
+      core::vshmem_size(copy_if_agent_plan.shared_memory_size, num_tiles);
+
+    std::size_t allocation_sizes[2] = {0, vshmem_size};
+    status = scan_tile_state_t::AllocationSize(num_tiles, allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-
-    void* allocations[2] = {NULL, NULL};
+    void *allocations[2] = {nullptr, nullptr};
     status = cub::AliasTemporaries(d_temp_storage,
                                    temp_storage_bytes,
                                    allocations,
                                    allocation_sizes);
     CUDA_CUB_RET_IF_FAIL(status);
 
-
-    if (d_temp_storage == NULL)
-    {
+    if (d_temp_storage == nullptr)
+    { // user is just requesting temp_storage_size.
       return status;
     }
 
-    ScanTileState tile_status;
-    status = tile_status.Init(static_cast<int>(num_tiles), allocations[0], allocation_sizes[0]);
+    scan_tile_state_t tile_status;
+    status = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]);
     CUDA_CUB_RET_IF_FAIL(status);
 
-    init_agent ia(init_plan, num_tiles, stream, "copy_if::init_agent", debug_sync);
+    char *const vshmem_ptr = vshmem_size > 0
+                               ? reinterpret_cast<char *>(allocations[1])
+                               : nullptr;
 
-    char *vshmem_ptr = vshmem_size > 0 ? (char*)allocations[1] : NULL;
-
-    copy_if_agent pa(copy_if_plan, num_items, stream, vshmem_ptr, "copy_if::partition_agent", debug_sync);
-
-    ia.launch(tile_status, num_tiles, num_selected_out);
+    using init_agent_launcher_t = core::AgentLauncher<init_agent_t>;
+    init_agent_launcher_t ia{init_agent_plan,
+                             num_tiles,
+                             stream,
+                             "copy_if::init_agent",
+                             debug_sync};
+    ia.launch_ptx_plan(init_ptx_plan,
+                       // Args to Agent::entry:
+                       tile_status,
+                       num_tiles,
+                       num_selected_out);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
 
-    pa.launch(items,
-              stencil,
-              output_it,
-              predicate,
-              num_items,
-              num_selected_out,
-              tile_status,
-              num_tiles);
+    using copy_if_agent_launcher_t = core::AgentLauncher<copy_if_agent_t>;
+    copy_if_agent_launcher_t pa{copy_if_agent_plan,
+                                num_items,
+                                stream,
+                                vshmem_ptr,
+                                "copy_if::partition_agent",
+                                debug_sync};
+    pa.launch_ptx_dispatch(typename copy_if_agent_t::Tunings{},
+                           // Args to Agent::entry:
+                           items,
+                           stencil,
+                           output_it,
+                           predicate,
+                           num_items,
+                           num_selected_out,
+                           tile_status,
+                           num_tiles);
     CUDA_CUB_RET_IF_FAIL(cudaPeekAtLastError());
+
     return status;
   }
 
@@ -695,7 +681,7 @@ namespace __copy_if {
             typename StencilIt,
             typename OutputIt,
             typename Predicate>
-  THRUST_RUNTIME_FUNCTION
+  CUB_RUNTIME_FUNCTION
   OutputIt copy_if(execution_policy<Derived>& policy,
                    InputIt                    first,
                    InputIt                    last,
@@ -789,28 +775,29 @@ copy_if(execution_policy<Derived> &policy,
         OutputIterator             result,
         Predicate                  pred)
 {
-  OutputIterator ret = result;
+  auto run_par = [&]() -> OutputIterator {
+    return __copy_if::copy_if(policy,
+                              first,
+                              last,
+                              __copy_if::no_stencil_tag(),
+                              result,
+                              pred);
+  };
 
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __copy_if::copy_if(policy,
-                             first,
-                             last,
-                             __copy_if::no_stencil_tag(),
-                             result,
-                             pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::copy_if(cvt_to_seq(derived_cast(policy)),
-                          first,
-                          last,
-                          result,
-                          pred);
+  auto run_seq = [&]() -> OutputIterator {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::copy_if(cvt_to_seq(derived_cast(policy)),
+                           first,
+                           last,
+                           result,
+                           pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 } // func copy_if
 
 __thrust_exec_check_disable__
@@ -827,29 +814,25 @@ copy_if(execution_policy<Derived> &policy,
         OutputIterator             result,
         Predicate                  pred)
 {
-  OutputIterator ret = result;
+  auto run_par = [&]() -> OutputIterator {
+    return __copy_if::copy_if(policy, first, last, stencil, result, pred);
+  };
 
-  if (__THRUST_HAS_CUDART__)
-  {
-    ret = __copy_if::copy_if(policy,
-                             first,
-                             last,
-                             stencil,
-                             result,
-                             pred);
-  }
-  else
-  {
-#if !__THRUST_HAS_CUDART__
-    ret = thrust::copy_if(cvt_to_seq(derived_cast(policy)),
-                          first,
-                          last,
-                          stencil,
-                          result,
-                          pred);
+  auto run_seq = [&]() -> OutputIterator {
+#ifdef CUB_RUNTIME_ENABLED
+    // no-op, this lambda is only used when CDP is disabled.
+    return result;
+#else
+    return thrust::copy_if(cvt_to_seq(derived_cast(policy)),
+                           first,
+                           last,
+                           stencil,
+                           result,
+                           pred);
 #endif
-  }
-  return ret;
+  };
+
+  return cub::detail::cdp_dispatch(run_par, run_seq);
 }    // func copy_if
 
 }    // namespace cuda_cub

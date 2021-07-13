@@ -2,6 +2,11 @@
 #include <thrust/detail/config.h>
 #include <thrust/device_malloc_allocator.h>
 #include <thrust/system/cpp/vector.h>
+
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+#include <cub/detail/target.cuh>
+#endif
+
 #include <memory>
 
 template <typename T>
@@ -80,7 +85,9 @@ struct my_allocator_with_custom_destroy
   __host__ __device__
   void destroy(T *)
   {
-#if !__CUDA_ARCH__
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+    NV_IF_TARGET(NV_IS_HOST, (g_state = true;), ());
+#else
     g_state = true;
 #endif
   }
@@ -203,7 +210,6 @@ void TestAllocatorTraitsRebind()
 }
 DECLARE_UNITTEST(TestAllocatorTraitsRebind);
 
-#if THRUST_CPP_DIALECT >= 2011
 void TestAllocatorTraitsRebindCpp11()
 {
   ASSERT_EQUAL(
@@ -251,5 +257,3 @@ void TestAllocatorTraitsRebindCpp11()
   );
 }
 DECLARE_UNITTEST(TestAllocatorTraitsRebindCpp11);
-#endif // C++11
-

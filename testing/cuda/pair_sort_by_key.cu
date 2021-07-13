@@ -10,12 +10,8 @@ template<typename ExecutionPolicy, typename Iterator1, typename Iterator2, typen
 __global__
 void stable_sort_by_key_kernel(ExecutionPolicy exec, Iterator1 keys_first, Iterator1 keys_last, Iterator2 values_first, Iterator3 is_supported)
 {
-#if (__CUDA_ARCH__ >= 200)
   *is_supported = true;
   thrust::stable_sort_by_key(exec, keys_first, keys_last, values_first);
-#else
-  *is_supported = false;
-#endif
 }
 
 

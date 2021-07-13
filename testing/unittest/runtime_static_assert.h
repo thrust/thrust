@@ -20,6 +20,8 @@ namespace unittest
 
 #if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
 
+#include <cub/detail/target.cuh>
+
 #define ASSERT_STATIC_ASSERT(X) \
     { \
         bool triggered = false; \
@@ -86,8 +88,10 @@ namespace unittest
         {
             static_assert_exception ex(filename, lineno);
 
-#ifdef __CUDA_ARCH__
-            *detail::device_exception = ex;
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+            NV_IF_TARGET(NV_IS_DEVICE,
+                         (*detail::device_exception = ex;),
+                         (throw ex;));
 #else
             throw ex;
 #endif

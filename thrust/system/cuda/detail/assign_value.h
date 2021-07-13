@@ -23,6 +23,7 @@
 #include <thrust/detail/raw_pointer_cast.h>
 #include <thrust/system/cuda/detail/copy.h>
 
+#include <cub/detail/target.cuh>
 
 namespace thrust
 {
@@ -47,15 +48,12 @@ inline __host__ __device__
     }
   };
 
-  if (THRUST_IS_HOST_CODE) {
-    #if THRUST_INCLUDE_HOST_CODE
-      war_nvbugs_881631::host_path(exec,dst,src);
-    #endif
-  } else {
-    #if THRUST_INCLUDE_DEVICE_CODE
-      war_nvbugs_881631::device_path(exec,dst,src);
-    #endif
-  }
+  NV_IF_TARGET(NV_IS_HOST, (
+    war_nvbugs_881631::host_path(exec,dst,src);
+  ), (
+    war_nvbugs_881631::device_path(exec,dst,src);
+  ));
+
 } // end assign_value()
 
 
@@ -83,18 +81,12 @@ inline __host__ __device__
     }
   };
 
-  if (THRUST_IS_HOST_CODE) {
-    #if THRUST_INCLUDE_HOST_CODE
-      war_nvbugs_881631::host_path(systems,dst,src);
-    #endif
-  } else {
-    #if THRUST_INCLUDE_DEVICE_CODE
-      war_nvbugs_881631::device_path(systems,dst,src);
-    #endif
-  }
+  NV_IF_TARGET(NV_IS_HOST, (
+    war_nvbugs_881631::host_path(systems,dst,src);
+  ), (
+    war_nvbugs_881631::device_path(systems,dst,src);
+  ));
 } // end assign_value()
-
-
 
 
 } // end cuda_cub

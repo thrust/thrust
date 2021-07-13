@@ -4,6 +4,10 @@
 #include <thrust/device_new.h>
 #include <thrust/device_delete.h>
 
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+#include <cub/detail/target.cuh>
+#endif
+
 struct Foo
 {
   __host__ __device__
@@ -14,10 +18,12 @@ struct Foo
   __host__ __device__
   ~Foo(void)
   {
-#ifdef __CUDA_ARCH__
-    // __device__ overload
-    if(set_me_upon_destruction != 0)
-      *set_me_upon_destruction = true;
+#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
+    NV_IF_TARGET(NV_IS_DEVICE, (
+      if (set_me_upon_destruction != 0)
+      {
+        *set_me_upon_destruction = true;
+      }), ());
 #endif
   }
 
